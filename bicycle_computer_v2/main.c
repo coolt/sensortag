@@ -1,33 +1,5 @@
-/** Basisversion, die geht
-  @file  main.c
-  @brief main entry of simpleBroadcaster, a bare-bones, speed optimized
-         program transmitting BLE advertisment packages every N ms based on input from 5
-         GPIOs
-
-  @usage
-        - Make a copy of ccfg.c from your CC26XXWARE version and
-          configure it to use internal LF RCOSC
-        - Configure WAKE_INTERVAL
-        - Configure recharge period to 400ms if WAKE_INTERVAL is larger than 400ms(ish)
-        - Configure IO's and set up advertisment payload
-        - Configure output power to desired value in CMD_RADIO_SETUP (see pa_table_cc26xx.c)
-
- *   V0:
- *   Fixes Aufwachen nach 10 s (Wakeup intervall) in RTC-init-Funktion,
- *   Danach Zeit berechnen
-
- *   V1
- *   ----------------------------------
- * - GPIO-Hanlder in startup_ccs.s
- * - Applikationskonstanten in config.h -> Interrupt defines
- * - IOKonstanten in board.h, gpio.h
- * - Power- und Init-Funktionen in system.h
- *
- *   Aufgesetzte Interrupts:
- *   Button, Reed Switch, Bat low
- *
- *   Probleme:
- *   Interrupt Reed Switch funktioniert nur beim ersten mal.  Danach erkennt er den Interrupt nicht mehr.
+/** V2:
+ *  - Button und Reed (auf Gnd) gehen
  *
  */
 
