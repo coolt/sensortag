@@ -1,5 +1,6 @@
-/** V2:
+/** V2: // auf git-branch "mit LED"
  *  - Button und Reed (auf Gnd) gehen
+ *  - Wegen LED GPIO-Port nicht abstellen
  *
  */
 
@@ -76,10 +77,10 @@ int main(void) {
 	IntEnable(INT_EDGE_DETECT);
 	// -----------------------------------------------------------
 
-	// power off
-	powerDisablePeriph(); //Disable clock for GPIO in CPU run mode
-	HWREGBITW(PRCM_BASE + PRCM_O_GPIOCLKGR, PRCM_GPIOCLKGR_CLK_EN_BITN) = 0;
-	HWREGBITW(PRCM_BASE + PRCM_O_CLKLOADCTL, PRCM_CLKLOADCTL_LOAD_BITN) = 1; // Load clock settings
+	// power off: No because of debugging LeD
+	//powerDisablePeriph(); //Disable clock for GPIO in CPU run mode
+	//HWREGBITW(PRCM_BASE + PRCM_O_GPIOCLKGR, PRCM_GPIOCLKGR_CLK_EN_BITN) = 0;
+	//HWREGBITW(PRCM_BASE + PRCM_O_CLKLOADCTL, PRCM_CLKLOADCTL_LOAD_BITN) = 1; // Load clock settings
 
 	initInterrupts(); // enable generaly
 	initRadio();  // set BLE, 3 Adv. channels
@@ -110,6 +111,11 @@ int main(void) {
 
 	//Start radio setup and linked advertisment
 	radioUpdateAdvData(10, payload); //Update advertising byte based on IO inputs
+
+	// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+	// Interrupt driven device
+	// Interrupt seen on LED 1, 2
+
 	while(1) {  // endlose loop: system is in standby mode, waiting for interrupt on GPIO
 
 		rfBootDone  = 0;

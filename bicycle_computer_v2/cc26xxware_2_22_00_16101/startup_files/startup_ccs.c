@@ -267,17 +267,35 @@ static void SysTickIntHandler( void ){ while(1) {}}
 
 static void GPIOIntHandler(void){
 
-	uint32_t pin_mask;
+	uint32_t interrupt_pin_mask;
+	const uint32_t button = 16;
+	const uint32_t reed_switch = 0x02000000;
 
 	// power on GPIO
 	powerEnablePeriph();
 	powerEnableGPIOClockRunMode();
 	while((PRCMPowerDomainStatus(PRCM_DOMAIN_PERIPH) != PRCM_DOMAIN_POWER_ON)); /* Wait for domains to power on */
 
-	// GPIO_EVFLAG31-0 = alle GPIO
-	pin_mask = (HWREG(GPIO_BASE + GPIO_O_EVFLAGS31_0) & GPIO_PIN_MASK);
+	// get interrupt
+	interrupt_pin_mask = (HWREG(GPIO_BASE + GPIO_O_EVFLAGS31_0) & GPIO_PIN_MASK);
+
 	/* Clear the interrupt flags */
-	HWREG(GPIO_BASE + GPIO_O_EVFLAGS31_0) = pin_mask;
+		HWREG(GPIO_BASE + GPIO_O_EVFLAGS31_0) = interrupt_pin_mask;
+
+	switch(interrupt_pin_mask){
+		case button:
+			setLED1();
+			break;
+		case reed_switch:
+			setLED2();
+			break;
+		default:
+			break;
+	}
+
+	int bb = 1;
+
+
 
 	// Power off
 	powerDisablePeriph();

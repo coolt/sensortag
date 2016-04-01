@@ -2,6 +2,59 @@
 **** Build of configuration Debug for project bicycle_computer ****
 
 "C:\\ti\\ccsv6\\utils\\bin\\gmake" -k all 
-gmake: Nothing to be done for `all'.
+'Building file: ../cc26xxware_2_22_00_16101/startup_files/startup_ccs.c'
+'Invoking: ARM Compiler'
+"C:/ti/ccsv6/tools/compiler/ti-cgt-arm_5.2.7/bin/armcl" -mv7M3 --code_state=16 --abi=eabi -me --include_path="C:/Users/katrin/Documents/GitHub/sensortag/bicycle_computer_v2/cc26xxware_2_22_00_16101/startup_files" --include_path="C:/Users/katrin/Documents/GitHub/sensortag/bicycle_computer_v2/cc26xxware_2_22_00_16101/inc" --include_path="C:/Users/katrin/Documents/GitHub/sensortag/bicycle_computer_v2/cc26xxware_2_22_00_16101/utils" --include_path="C:/Users/katrin/Documents/GitHub/sensortag/bicycle_computer_v2/radio_files/pa_table" --include_path="C:/ti/ccsv6/tools/compiler/ti-cgt-arm_5.2.7/include" --include_path="C:/Users/katrin/Documents/GitHub/sensortag/bicycle_computer_v2/cc26xxware_2_22_00_16101/driverLib" --include_path="C:/Users/katrin/Documents/GitHub/sensortag/bicycle_computer_v2/radio_files" --include_path="C:/Users/katrin/Documents/GitHub/sensortag/bicycle_computer_v2/sensors" --include_path="C:/Users/katrin/Documents/GitHub/sensortag/bicycle_computer_v2/interfaces" -g --display_error_number --diag_warning=225 --diag_wrap=off --preproc_with_compile --preproc_dependency="cc26xxware_2_22_00_16101/startup_files/startup_ccs.pp" --obj_directory="cc26xxware_2_22_00_16101/startup_files"  "../cc26xxware_2_22_00_16101/startup_files/startup_ccs.c"
+"../cc26xxware_2_22_00_16101/startup_files/startup_ccs.c", line 260: warning #174-D: external/internal linkage conflict with previous declaration
+"../cc26xxware_2_22_00_16101/startup_files/startup_ccs.c", line 261: warning #174-D: external/internal linkage conflict with previous declaration
+"../cc26xxware_2_22_00_16101/startup_files/startup_ccs.c", line 262: warning #174-D: external/internal linkage conflict with previous declaration
+"../cc26xxware_2_22_00_16101/startup_files/startup_ccs.c", line 263: warning #174-D: external/internal linkage conflict with previous declaration
+"../cc26xxware_2_22_00_16101/startup_files/startup_ccs.c", line 264: warning #174-D: external/internal linkage conflict with previous declaration
+"../cc26xxware_2_22_00_16101/startup_files/startup_ccs.c", line 265: warning #174-D: external/internal linkage conflict with previous declaration
+"../cc26xxware_2_22_00_16101/startup_files/startup_ccs.c", line 266: warning #174-D: external/internal linkage conflict with previous declaration
+"../cc26xxware_2_22_00_16101/startup_files/startup_ccs.c", line 268: warning #174-D: external/internal linkage conflict with previous declaration
+"../cc26xxware_2_22_00_16101/startup_files/startup_ccs.c", line 286: warning #2170-D: use of a const variable in a constant expression is nonstandard in C
+"../cc26xxware_2_22_00_16101/startup_files/startup_ccs.c", line 289: warning #2170-D: use of a const variable in a constant expression is nonstandard in C
+"../cc26xxware_2_22_00_16101/startup_files/startup_ccs.c", line 290: warning #225-D: function "setLED2" declared implicitly
+"../cc26xxware_2_22_00_16101/startup_files/startup_ccs.c", line 296: warning #179-D: variable "bb" was declared but never referenced
+"../cc26xxware_2_22_00_16101/startup_files/startup_ccs.c", line 314: warning #174-D: external/internal linkage conflict with previous declaration
+"../cc26xxware_2_22_00_16101/startup_files/startup_ccs.c", line 315: warning #174-D: external/internal linkage conflict with previous declaration
+"../cc26xxware_2_22_00_16101/startup_files/startup_ccs.c", line 316: warning #174-D: external/internal linkage conflict with previous declaration
+"../cc26xxware_2_22_00_16101/startup_files/startup_ccs.c", line 317: warning #174-D: external/internal linkage conflict with previous declaration
+"../cc26xxware_2_22_00_16101/startup_files/startup_ccs.c", line 318: warning #174-D: external/internal linkage conflict with previous declaration
+"../cc26xxware_2_22_00_16101/startup_files/startup_ccs.c", line 319: warning #174-D: external/internal linkage conflict with previous declaration
+"../cc26xxware_2_22_00_16101/startup_files/startup_ccs.c", line 320: warning #174-D: external/internal linkage conflict with previous declaration
+"../cc26xxware_2_22_00_16101/startup_files/startup_ccs.c", line 321: warning #174-D: external/internal linkage conflict with previous declaration
+"../cc26xxware_2_22_00_16101/startup_files/startup_ccs.c", line 322: warning #174-D: external/internal linkage conflict with previous declaration
+"../cc26xxware_2_22_00_16101/startup_files/startup_ccs.c", line 323: warning #174-D: external/internal linkage conflict with previous declaration
+"../cc26xxware_2_22_00_16101/startup_files/startup_ccs.c", line 324: warning #174-D: external/internal linkage conflict with previous declaration
+"../cc26xxware_2_22_00_16101/startup_files/startup_ccs.c", line 325: warning #174-D: external/internal linkage conflict with previous declaration
+"../cc26xxware_2_22_00_16101/startup_files/startup_ccs.c", line 326: warning #174-D: external/internal linkage conflict with previous declaration
+"../cc26xxware_2_22_00_16101/startup_files/startup_ccs.c", line 327: warning #174-D: external/internal linkage conflict with previous declaration
+"../cc26xxware_2_22_00_16101/startup_files/startup_ccs.c", line 328: warning #174-D: external/internal linkage conflict with previous declaration
+"../cc26xxware_2_22_00_16101/startup_files/startup_ccs.c", line 329: warning #174-D: external/internal linkage conflict with previous declaration
+"../cc26xxware_2_22_00_16101/startup_files/startup_ccs.c", line 330: warning #174-D: external/internal linkage conflict with previous declaration
+"../cc26xxware_2_22_00_16101/startup_files/startup_ccs.c", line 331: warning #174-D: external/internal linkage conflict with previous declaration
+"../cc26xxware_2_22_00_16101/startup_files/startup_ccs.c", line 332: warning #174-D: external/internal linkage conflict with previous declaration
+"../cc26xxware_2_22_00_16101/startup_files/startup_ccs.c", line 333: warning #174-D: external/internal linkage conflict with previous declaration
+"../cc26xxware_2_22_00_16101/startup_files/startup_ccs.c", line 334: warning #174-D: external/internal linkage conflict with previous declaration
+"../cc26xxware_2_22_00_16101/startup_files/startup_ccs.c", line 335: warning #174-D: external/internal linkage conflict with previous declaration
+"../cc26xxware_2_22_00_16101/startup_files/startup_ccs.c", line 336: warning #174-D: external/internal linkage conflict with previous declaration
+"../cc26xxware_2_22_00_16101/startup_files/startup_ccs.c", line 337: warning #174-D: external/internal linkage conflict with previous declaration
+"../cc26xxware_2_22_00_16101/startup_files/startup_ccs.c", line 338: warning #174-D: external/internal linkage conflict with previous declaration
+"../cc26xxware_2_22_00_16101/startup_files/startup_ccs.c", line 339: warning #174-D: external/internal linkage conflict with previous declaration
+"../cc26xxware_2_22_00_16101/startup_files/startup_ccs.c", line 340: warning #174-D: external/internal linkage conflict with previous declaration
+"../cc26xxware_2_22_00_16101/startup_files/startup_ccs.c", line 341: warning #174-D: external/internal linkage conflict with previous declaration
+"../cc26xxware_2_22_00_16101/startup_files/startup_ccs.c", line 342: warning #174-D: external/internal linkage conflict with previous declaration
+"../cc26xxware_2_22_00_16101/startup_files/startup_ccs.c", line 343: warning #174-D: external/internal linkage conflict with previous declaration
+"../cc26xxware_2_22_00_16101/startup_files/startup_ccs.c", line 250: warning #179-D: function "IntDefaultHandler" was declared but never referenced
+'Finished building: ../cc26xxware_2_22_00_16101/startup_files/startup_ccs.c'
+' '
+'Building target: bicycle_computer.out'
+'Invoking: ARM Linker'
+"C:/ti/ccsv6/tools/compiler/ti-cgt-arm_5.2.7/bin/armcl" -mv7M3 --code_state=16 --abi=eabi -me -g --display_error_number --diag_warning=225 --diag_wrap=off -z -m"bicycle_computer.map" --heap_size=0 --stack_size=256 -i"C:/ti/ccsv6/tools/compiler/ti-cgt-arm_5.2.7/lib" -i"C:/ti/ccsv6/tools/compiler/ti-cgt-arm_5.2.7/include" --reread_libs --warn_sections --display_error_number --diag_wrap=off --xml_link_info="bicycle_computer_linkInfo.xml" --rom_model -o "bicycle_computer.out" "./ccfg.obj" "./em8500-pwr-mgnt.obj" "./main.obj" "./radio.obj" "./rtc.obj" "./system.obj" "./sensors/bmp-280-sensor.obj" "./sensors/buzzer.obj" "./sensors/ext-flash.obj" "./sensors/hdc-1000-sensor.obj" "./sensors/opt-3001-sensor.obj" "./sensors/sensor-common.obj" "./sensors/tmp-007-sensor.obj" "./interfaces/board-i2c.obj" "./interfaces/board-spi.obj" "./cc26xxware_2_22_00_16101/startup_files/startup_ccs.obj" "./cc26xxware_2_22_00_16101/driverLib/adi.obj" "./cc26xxware_2_22_00_16101/driverLib/aon_batmon.obj" "./cc26xxware_2_22_00_16101/driverLib/aon_event.obj" "./cc26xxware_2_22_00_16101/driverLib/aon_ioc.obj" "./cc26xxware_2_22_00_16101/driverLib/aon_rtc.obj" "./cc26xxware_2_22_00_16101/driverLib/aon_wuc.obj" "./cc26xxware_2_22_00_16101/driverLib/aux_adc.obj" "./cc26xxware_2_22_00_16101/driverLib/aux_smph.obj" "./cc26xxware_2_22_00_16101/driverLib/aux_tdc.obj" "./cc26xxware_2_22_00_16101/driverLib/aux_timer.obj" "./cc26xxware_2_22_00_16101/driverLib/aux_wuc.obj" "./cc26xxware_2_22_00_16101/driverLib/ccfgread.obj" "./cc26xxware_2_22_00_16101/driverLib/chipinfo.obj" "./cc26xxware_2_22_00_16101/driverLib/cpu.obj" "./cc26xxware_2_22_00_16101/driverLib/crypto.obj" "./cc26xxware_2_22_00_16101/driverLib/ddi.obj" "./cc26xxware_2_22_00_16101/driverLib/debug.obj" "./cc26xxware_2_22_00_16101/driverLib/driverlib_release.obj" "./cc26xxware_2_22_00_16101/driverLib/event.obj" "./cc26xxware_2_22_00_16101/driverLib/flash.obj" "./cc26xxware_2_22_00_16101/driverLib/flashsafe.obj" "./cc26xxware_2_22_00_16101/driverLib/gpio.obj" "./cc26xxware_2_22_00_16101/driverLib/i2c.obj" "./cc26xxware_2_22_00_16101/driverLib/i2s.obj" "./cc26xxware_2_22_00_16101/driverLib/interrupt.obj" "./cc26xxware_2_22_00_16101/driverLib/ioc.obj" "./cc26xxware_2_22_00_16101/driverLib/osc.obj" "./cc26xxware_2_22_00_16101/driverLib/prcm.obj" "./cc26xxware_2_22_00_16101/driverLib/pwr_ctrl.obj" "./cc26xxware_2_22_00_16101/driverLib/rfc.obj" "./cc26xxware_2_22_00_16101/driverLib/rom_crypto.obj" "./cc26xxware_2_22_00_16101/driverLib/setup.obj" "./cc26xxware_2_22_00_16101/driverLib/smph.obj" "./cc26xxware_2_22_00_16101/driverLib/ssi.obj" "./cc26xxware_2_22_00_16101/driverLib/sys_ctrl.obj" "./cc26xxware_2_22_00_16101/driverLib/systick.obj" "./cc26xxware_2_22_00_16101/driverLib/timer.obj" "./cc26xxware_2_22_00_16101/driverLib/trng.obj" "./cc26xxware_2_22_00_16101/driverLib/uart.obj" "./cc26xxware_2_22_00_16101/driverLib/udma.obj" "./cc26xxware_2_22_00_16101/driverLib/vims.obj" "./cc26xxware_2_22_00_16101/driverLib/watchdog.obj" "../cc26x0f128.cmd"  -l"libc.a" 
+<Linking>
+'Finished building target: bicycle_computer.out'
+' '
 
 **** Build Finished ****
