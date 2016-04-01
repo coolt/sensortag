@@ -1,6 +1,17 @@
-composer.phar
-/vendor/
 
-# Commit your application's lock file http://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file
-# You may choose to ignore a library lock file http://getcomposer.org/doc/02-libraries.md#lock-file
-# composer.lock
+# verzeichnisse ganz ausschliessen dir/
+bicycle_computer_v1_geht/
+
+
+# Trifft alles unterhalb dieses Verzeichnisses  dir/**
+bicycle_computer_v2/.launches/**
+bicycle_computer_v2/Debug/**
+
+
+# Dateien an genau dieser Stelle /*.c
+bicycle_computer_v2/.xdchelp
+
+# Trifft Datei/Verzeichnis überall **/foo
+**/.xdchelp
+**/Debug/**
+**/.config 
