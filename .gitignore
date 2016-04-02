@@ -1,7 +1,7 @@
 ﻿
 # verzeichnisse ganz ausschliessen dir/
 bicycle_computer_v1_geht/
-workspace_0401/
+workspace_0401/**
 
 # Trifft alles unterhalb dieses Verzeichnisses  dir/**
 bicycle_computer_v2/.launches/**
