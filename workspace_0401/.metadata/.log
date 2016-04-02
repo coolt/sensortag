@@ -7872,3 +7872,23 @@ java.nio.channels.ClosedByInterruptException
 Device ID is not recognized or is not supported by driver. Confirm device and debug probe configuration is correct, or update device driver.
 (Emulation package 6.0.83.1)
 
+
+!ENTRY com.ti.ccstudio.debug 1 0 2016-04-02 03:33:48.595
+!MESSAGE DS_ERROR: CS_DAP_0: Error: (Error -261 @ 0x0) Invalid response was received from the XDS110. (Emulation package 6.0.83.1) 
+
+
+!ENTRY com.ti.ccstudio.debug 1 0 2016-04-02 03:33:48.640
+!MESSAGE DS_ERROR: Cortex_M3_0: Error: (Error -261 @ 0x0) Invalid response was received from the XDS110. (Emulation package 6.0.83.1) 
+
+
+!ENTRY com.ti.ccstudio.debug 1 0 2016-04-02 03:33:49.521
+!MESSAGE DS_ERROR: CS_DAP_0: Unable to determine target status after 20 attempts
+
+
+!ENTRY com.ti.ccstudio.debug 1 0 2016-04-02 03:33:49.571
+!MESSAGE DS_ERROR: CS_DAP_0: Failed to remove the debug state from the target before disconnecting.  There may still be breakpoint op-codes embedded in program memory.  It is recommended that you reset the emulator before you connect and reload your program before you continue debugging
+
+
+!ENTRY com.ti.ccstudio.debug 1 0 2016-04-02 03:33:54.837
+!MESSAGE DS_ERROR: Cortex_M3_0: Failed to remove the debug state from the target before disconnecting.  There may still be breakpoint op-codes embedded in program memory.  It is recommended that you reset the emulator before you connect and reload your program before you continue debugging
+
