@@ -34,6 +34,7 @@
 
 #include "../system.h"
 #include "../inc/hw_aon_event.h"
+
 //*****************************************************************************
 //
 //! Forward declaration of the reset ISR and the default fault handlers.
@@ -267,23 +268,41 @@ static void SysTickIntHandler( void ){ while(1) {}}
 
 static void GPIOIntHandler(void){
 
-	uint32_t pin_mask;
+	uint32_t interrupt_pin_mask;
+		const uint32_t button = 16;
+		const uint32_t reed_switch = 0x02000000;
 
-	// power on GPIO
-	powerEnablePeriph();
-	powerEnableGPIOClockRunMode();
-	while((PRCMPowerDomainStatus(PRCM_DOMAIN_PERIPH) != PRCM_DOMAIN_POWER_ON)); /* Wait for domains to power on */
+		// power on GPIO
+		powerEnablePeriph();
+		powerEnableGPIOClockRunMode();
+		while((PRCMPowerDomainStatus(PRCM_DOMAIN_PERIPH) != PRCM_DOMAIN_POWER_ON)); /* Wait for domains to power on */
 
-	// GPIO_EVFLAG31-0 = alle GPIO
-	pin_mask = (HWREG(GPIO_BASE + GPIO_O_EVFLAGS31_0) & GPIO_PIN_MASK);
-	/* Clear the interrupt flags */
-	HWREG(GPIO_BASE + GPIO_O_EVFLAGS31_0) = pin_mask;
+		// get interrupt
+		interrupt_pin_mask = (HWREG(GPIO_BASE + GPIO_O_EVFLAGS31_0) & GPIO_PIN_MASK);
 
-	// Power off
-	powerDisablePeriph();
-	HWREGBITW(PRCM_BASE + PRCM_O_GPIOCLKGR, PRCM_GPIOCLKGR_CLK_EN_BITN) = 0; // Disable clock for GPIO in CPU run mode
-	// Load clock settings
-	HWREGBITW(PRCM_BASE + PRCM_O_CLKLOADCTL, PRCM_CLKLOADCTL_LOAD_BITN) = 1;
+		/* Clear the interrupt flags */
+			HWREG(GPIO_BASE + GPIO_O_EVFLAGS31_0) = interrupt_pin_mask;
+
+		switch(interrupt_pin_mask){
+			case button:
+				setLED1();
+				break;
+			case reed_switch:
+				setLED2();
+				break;
+			default:
+				break;
+		}
+
+		int bb = 1;
+
+
+
+		// Power off
+		powerDisablePeriph();
+		HWREGBITW(PRCM_BASE + PRCM_O_GPIOCLKGR, PRCM_GPIOCLKGR_CLK_EN_BITN) = 0; // Disable clock for GPIO in CPU run mode
+		// Load clock settings
+		HWREGBITW(PRCM_BASE + PRCM_O_CLKLOADCTL, PRCM_CLKLOADCTL_LOAD_BITN) = 1;
 
 	//To avoid second interupt with register = 0 (its not fast enough!!)
 	__asm(" nop");

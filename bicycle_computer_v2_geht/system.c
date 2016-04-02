@@ -11,6 +11,37 @@
 #include "cc26xxware_2_22_00_16101/driverLib/vims.h"
 #include "board.h"
 
+/** Call this function in Batterymode with TI-SensorTag to Debug your Code
+ *  it will enable the LED and goes into a while loop to stop here.
+ */
+void setLED1(void){
+
+	// Enable Power for the IOC to clear the interrupt flag
+   powerEnablePeriph();
+   powerEnableGPIOClockRunMode();
+
+	/* Wait for domains to power on */
+	while((PRCMPowerDomainStatus(PRCM_DOMAIN_PERIPH)
+		 != PRCM_DOMAIN_POWER_ON));
+
+	GPIOPinWrite(BOARD_IOID_LED_1,1);
+	//while(1);
+}
+
+void setLED2(void){
+
+	// Enable Power for the IOC to clear the interrupt flag
+   powerEnablePeriph();
+   powerEnableGPIOClockRunMode();
+
+	/* Wait for domains to power on */
+	while((PRCMPowerDomainStatus(PRCM_DOMAIN_PERIPH)
+		 != PRCM_DOMAIN_POWER_ON));
+
+	GPIOPinWrite(BOARD_IOID_LED_2,1);
+	//while(1);
+}
+
 void ledInit(void)
 {
 	IOCPinTypeGpioOutput(BOARD_IOID_LED_1); //LED1

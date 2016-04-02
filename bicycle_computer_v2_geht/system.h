@@ -4,7 +4,8 @@
 void initInterrupts(void);
 void sensorsInit(void); // new
 void ledInit(void);  // new
-
+void setLED1(void); // baek
+void setLED2(void); // baek
 void powerEnableAuxForceOn(void);
 void powerDisableAuxForceOn(void);
 
