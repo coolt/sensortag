@@ -1,7 +1,7 @@
-
+﻿
 # verzeichnisse ganz ausschliessen dir/
 bicycle_computer_v1_geht/
-
+workspace_0401/
 
 # Trifft alles unterhalb dieses Verzeichnisses  dir/**
 bicycle_computer_v2/.launches/**
@@ -9,20 +9,21 @@ bicycle_computer_v2/Debug/**
 
 
 # Dateien an genau dieser Stelle /*.c
-bicycle_computer_v2/.xdchelp
+bicycle_computer_v2/*.xdchelp
+
 
 # Trifft Datei/Verzeichnis überall **/foo
 **/.xdchelp
 **/Debug/**
 **/.config 
-workspace_0401/.metadata/.plugins/org.eclipse.debug.ui/launchConfigurationHistory.xml
-workspace_0401/.metadata/.plugins/org.eclipse.rtsc.xdctools.model/XDCModel.log.lck
-*.pdom
-*.log
-*.xml
-*.log
-workspace_0401/.metadata/.plugins/org.eclipse.core.resources/.root/.indexes/history.version
-*.version
-workspace_0401/.metadata/.plugins/org.eclipse.cdt.core/.log
-*.log
-workspace_0401/.metadata/.plugins/org.eclipse.cdt.core/.log
+**/.pdom
+**/.log
+**/.xml
+**/.log
+
+
+
+**/.version
+
+**/.prefs
+**/.ini
