@@ -18,3 +18,11 @@ bicycle_computer_v2/.xdchelp
 workspace_0401/.metadata/.plugins/org.eclipse.debug.ui/launchConfigurationHistory.xml
 workspace_0401/.metadata/.plugins/org.eclipse.rtsc.xdctools.model/XDCModel.log.lck
 *.pdom
+*.log
+*.xml
+*.log
+workspace_0401/.metadata/.plugins/org.eclipse.core.resources/.root/.indexes/history.version
+*.version
+workspace_0401/.metadata/.plugins/org.eclipse.cdt.core/.log
+*.log
+workspace_0401/.metadata/.plugins/org.eclipse.cdt.core/.log
