@@ -1,49 +1,7 @@
 /******************************************************************************
 *  Filename:       aon_rtc.h
-*  Revised:        2015-07-16 12:12:04 +0200 (Thu, 16 Jul 2015)
-*  Revision:       44151
-*
-*  Description:    Defines and prototypes for the AON RTC
-*
-*  Copyright (c) 2015, Texas Instruments Incorporated
-*  All rights reserved.
-*
-*  Redistribution and use in source and binary forms, with or without
-*  modification, are permitted provided that the following conditions are met:
-*
-*  1) Redistributions of source code must retain the above copyright notice,
-*     this list of conditions and the following disclaimer.
-*
-*  2) Redistributions in binary form must reproduce the above copyright notice,
-*     this list of conditions and the following disclaimer in the documentation
-*     and/or other materials provided with the distribution.
-*
-*  3) Neither the name of the ORGANIZATION nor the names of its contributors may
-*     be used to endorse or promote products derived from this software without
-*     specific prior written permission.
-*
-*  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-*  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-*  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-*  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-*  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-*  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-*  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-*  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-*  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-*  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-*  POSSIBILITY OF SUCH DAMAGE.
-*
-******************************************************************************/
 
-//*****************************************************************************
-//
-//! \addtogroup aon_group
-//! @{
-//! \addtogroup aonrtc_api
-//! @{
-//
-//*****************************************************************************
+******************************************************************************/
 
 #ifndef __AON_RTC_H__
 #define __AON_RTC_H__
@@ -147,7 +105,7 @@ extern "C"
 //! Enable the AON Real Time Clock.
 //!
 //! \note Event generation for each of the three channels must also be enabled
-//!  using the function AONRTCChannelEnable().
+//!  using the function AONRTCChannelEnable(). !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 //!
 //! \return None
 //!
@@ -326,7 +284,7 @@ AONRTCDelayConfig(uint32_t ui32Delay)
 //
 //*****************************************************************************
 __STATIC_INLINE void
-AONRTCCombinedEventConfig(uint32_t ui32Channels)
+AONRTCCombinedEventConfig(uint32_t ui32Channels) // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 {
     uint32_t ui32Cfg;
 
@@ -517,7 +475,7 @@ AONRTCSubSecIncrGet(void)
 
 //*****************************************************************************
 //
-//! \brief Set operational mode of channel 1.
+//! \brief Set operational mode of channel 1. !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 //!
 //! Set the operational mode of channel 1. It can be capture or compare mode.
 //! In capture mode, an external event causes the value of the free running
@@ -625,7 +583,7 @@ AONRTCModeCh2Get(void)
 
 //*****************************************************************************
 //
-//! \brief Enable event operation for the specified channel.
+//! \brief Enable event operation for the specified channel. !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 //!
 //! Enable the event generation for the specified channel.
 //!

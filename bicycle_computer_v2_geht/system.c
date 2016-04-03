@@ -11,14 +11,195 @@
 #include "cc26xxware_2_22_00_16101/driverLib/vims.h"
 #include "board.h"
 
+// aus radio.c
+#include "cc26xxware_2_22_00_16101/inc/hw_rfc_dbell.h"
+#include "cc26xxware_2_22_00_16101/inc/hw_rfc_pwr.h"
+#include "cc26xxware_2_22_00_16101/inc/hw_fcfg1.h"
+#include "radio_files/rfc_api/common_cmd.h"
+#include "radio_files/rfc_api/ble_cmd.h"
+#include "radio_files/rfc_api/mailbox.h"
+#include "radio_files/patches/ble/apply_patch.h"
+#include "radio_files/overrides/ble_overrides.h"
+
+// aus rtc.c
+#include "config.h"
+#include "cc26xxware_2_22_00_16101/inc/hw_aon_event.h"
+#include "cc26xxware_2_22_00_16101/inc/hw_ints.h"
+#include "cc26xxware_2_22_00_16101/inc/hw_nvic.h"
+#include "cc26xxware_2_22_00_16101/driverLib/aon_rtc.h"
+#include "cc26xxware_2_22_00_16101/driverLib/sys_ctrl.h"
+
+// Datastructure BLE
+// Advertisment data. Must be global for other files to access it.
+#pragma data_alignment=4
+char advData[ADVLEN] = {0};
+
+
+#pragma data_alignment=8
+static uint64_t devAddress;
+
+
+#pragma data_alignment=4
+rfCoreHal_bleAdvPar_t cmdAdvParam = {
+  .advLen                     = ADVLEN,
+  .pAdvData                   = (uint8_t*)advData,
+  .pDeviceAddress             = (uint16_t*)&devAddress,
+  .endTrigger.triggerType     = TRIG_NEVER,
+};
+
+#pragma data_alignment=4
+rfCoreHal_bleAdvOutput_t advOutput = {0};
+
+#pragma data_alignment=4
+rfCoreHal_CMD_BLE_ADV_NC_t cmdAdv2 =  {
+  .commandNo                  = CMD_BLE_ADV_NC,
+  .pNextOp                    = NULL,
+  .condition.rule             = COND_ALWAYS,
+  .startTrigger.triggerType   = TRIG_NOW,
+  .channel                    = 39,
+  .pParams                    = (uint8_t*)&cmdAdvParam,
+  .pOutput                    = (uint8_t*)&advOutput,
+};
+
+#pragma data_alignment=4
+rfCoreHal_CMD_BLE_ADV_NC_t cmdAdv1 =  {
+  .commandNo                  = CMD_BLE_ADV_NC,
+  .pNextOp                    = NULL,
+  .condition.rule             = COND_ALWAYS,
+  .startTrigger.triggerType   = TRIG_NOW,
+  .channel                    = 38,
+  .pParams                    = (uint8_t*)&cmdAdvParam,
+  .pOutput                    = (uint8_t*)&advOutput,
+};
+
+
+#pragma data_alignment=4
+rfCoreHal_CMD_BLE_ADV_NC_t cmdAdv0 =  {
+  .commandNo                  = CMD_BLE_ADV_NC,
+  .pNextOp                    = NULL,
+  .condition.rule             = COND_ALWAYS,
+  .startTrigger.triggerType   = TRIG_NOW,
+  .channel                    = 37,
+  .pParams                    = (uint8_t*)&cmdAdvParam,
+  .pOutput                    = (uint8_t*)&advOutput,
+};
+
+#pragma data_alignment=4
+rfCoreHal_CMD_FS_POWERDOWN_t cmdFsPd = {
+  .commandNo                = CMD_FS_POWERDOWN,
+  .startTrigger.triggerType = TRIG_NOW,
+  .condition.rule           = COND_NEVER,
+};
+
+//#pragma data_alignment=4
+//rfCoreHal_CMD_RADIO_SETUP_t cmdSetup = {
+//  .commandNo                = CMD_RADIO_SETUP,
+//  .pNextOp                  = (uint8_t*)&cmdAdv0,
+//  .startTrigger.triggerType = TRIG_NOW,
+//  .condition.rule           = COND_ALWAYS,
+//  .pRegOverride             = bleSingleOverrides,
+//  .config.frontEndMode      = 0x1, // Differential
+//  .config.biasMode          = 0x1, // Internal bias
+//  .txPower.GC               = 0x1, // 0dbm
+//  .txPower.IB               = 0x2C, // 0dbm
+//  .txPower.tempCoeff        = 0x56,
+//  .mode                     = 0, //BLE mode
+//
+//};
+
+#pragma data_alignment=4
+rfCoreHal_CMD_RADIO_SETUP_t cmdSetup = {
+  .commandNo                = CMD_RADIO_SETUP,
+  .pNextOp                  = (uint8_t*)&cmdAdv0,
+  .startTrigger.triggerType = TRIG_NOW,
+  .condition.rule           = COND_ALWAYS,
+  .pRegOverride             = bleDifferentialOverrides,
+  .config.frontEndMode      = 0x0, // Differential
+  .config.biasMode          = 0x0, // Internal bias
+  .txPower.GC               = 0x1, // 0dbm
+  .txPower.IB               = 0x21, // 0dbm
+  .txPower.tempCoeff        = 0x31,
+  .mode                     = 0, //BLE mode
+};
+
+// ------------------------------------------------------------------------------------------------------------------------------
+
+// Forward declarations:
+void powerEnableGPIOClockRunMode();
+void powerEnablePeriph(void);
+
+// _______________________-
+void initRadio(void) {
+  // Set radio to BLE mode
+  HWREG(PRCM_BASE + PRCM_O_RFCMODESEL) = 0x1;
+
+   //Set up MAC address. Currently using TI Provided adress
+   devAddress = *((uint64_t*)(FCFG1_BASE+FCFG1_O_MAC_BLE_0));
+
+  //Chain advertisment commands.
+  cmdAdv0.pNextOp = (uint8_t *)&cmdAdv1;
+  cmdAdv1.pNextOp = (uint8_t *)&cmdAdv2;
+  cmdAdv2.pNextOp = (uint8_t *)&cmdFsPd;
+}
+
+void initRadioInts(void) {
+
+  // Enable interrupt for BOOT_DONE and LAST_CMD_DONE
+  uint32_t intVecs = RFC_DBELL_RFCPEIEN_BOOT_DONE_M |
+                     RFC_DBELL_RFCPEIEN_COMMAND_DONE_M |
+                     RFC_DBELL_RFCPEIEN_LAST_COMMAND_DONE_M;
+
+  HWREG(RFC_DBELL_BASE + RFC_DBELL_O_RFCPEIEN) = intVecs;
+}
+
+//Send command pointer to doorbell
+static inline void radioSendCommand(uint32_t cmd) {
+  HWREG( RFC_DBELL_BASE + RFC_DBELL_O_CMDR ) = cmd;
+}
+
+//Timed wait for radio direct commands to complete
+static inline void radioWaitCommandOk(void) {
+  while( HWREG(RFC_DBELL_BASE + RFC_DBELL_O_CMDSTA) == CMDSTA_Pending);
+}
+
+//Request radio to keep on system bus
+void radioCmdBusRequest(bool enabled) {
+  // Send bus request command as direct command
+  uint32_t cmd = CMDR_DIR_CMD_1BYTE(CMD_BUS_REQUEST, enabled);
+  radioSendCommand(cmd);
+  radioWaitCommandOk();
+}
+
+//Start radio timer
+void radioCmdStartRAT(void) {
+  uint32_t cmd = CMDR_DIR_CMD(CMD_START_RAT);
+  radioSendCommand(cmd);
+  radioWaitCommandOk();
+}
+
+void radioSetupAndTransmit() {
+  radioSendCommand( (uint32_t)&cmdSetup);
+}
+
+//Update advertising byte based on IO inputs
+void radioUpdateAdvData(int size, char* data) {
+	int i;
+	for(i = 0; i < size; i++)
+	{
+	  advData[i] = data[i];
+	}
+}
+
+
 /** Call this function in Batterymode with TI-SensorTag to Debug your Code
  *  it will enable the LED and goes into a while loop to stop here.
  */
 void setLED1(void){
 
 	// Enable Power for the IOC to clear the interrupt flag
-   powerEnablePeriph();
-   powerEnableGPIOClockRunMode();
+	powerEnablePeriph();
+	powerEnableGPIOClockRunMode();
+
 
 	/* Wait for domains to power on */
 	while((PRCMPowerDomainStatus(PRCM_DOMAIN_PERIPH)
@@ -81,19 +262,70 @@ void sensorsInit(void)
 }
 
 
+// *************************************INTERRUPT FUNCTIONS
+
 // Enable interrupt on CPU
-void initInterrupts(void) {
+void initInterrupts(void) {  //baek: this are only RF interrupts and RTC
 
-  // CPE1 - Int channels 31:16: Boot done is bit 30
-  HWREG(NVIC_EN0) = 1 << (INT_RF_CPE1 - 16);
-  // CPE0 - Int channels  15:0: CMD_DONE is bit 1, LAST_CMD_DONE is bit 0
-  HWREG(NVIC_EN0) = 1 << (INT_RF_CPE0 - 16);
-  // RTC combined event output
-  HWREG(NVIC_EN0) = 1 << (INT_AON_RTC - 16);
+	// CPE1 - Int channels 31:16: Boot done is bit 30
+	HWREG(NVIC_EN0) = 1 << (INT_RF_CPE1 - 16);
+	// CPE0 - Int channels  15:0: CMD_DONE is bit 1, LAST_CMD_DONE is bit 0
+	HWREG(NVIC_EN0) = 1 << (INT_RF_CPE0 - 16);
 
-  // Global interrupt enable
-  CPUcpsie();
+	// RTC combined event output
+	HWREG(NVIC_EN0) = 1 << (INT_AON_RTC - 16);
+
+	// Global interrupt enable
+	CPUcpsie();
 }
+
+void initRTC(void) { // Function from Dario (not in PA
+
+	//Add RTC Ch2 event as input to AON RTC interrupt
+	AONRTCCombinedEventConfig(AON_RTC_CH2);
+
+	//Set RTC ch 2 auto increment
+	AONRTCIncValueCh2Set(WAKE_INTERVAL_TICKS);
+	//Set RTC ch2 initial compare value
+	AONRTCCompareValueSet(AON_RTC_CH2, WAKE_INTERVAL_TICKS);
+	//Set RTC CH 2 to auto increment mode
+	AONRTCModeCh2Set(AON_RTC_MODE_CH2_CONTINUOUS);
+
+	//Enable channel 2
+	AONRTCChannelEnable(AON_RTC_CH2);
+
+
+	//Set device to wake MCU from standby on RTC channel 2
+	HWREG(AON_EVENT_BASE + AON_EVENT_O_MCUWUSEL) = AON_EVENT_MCUWUSEL_WU0_EV_RTC_CH2;
+
+	//Enable RTC
+	AONRTCEnable();
+}
+
+
+void initRTC_WUms(uint32_t ms){  // new function only PA
+
+	uint32_t compare_intervall = ms * 65536 / 1000;
+	uint32_t current_compare_value = 0;
+	uint32_t wake_compare_value = 0;
+
+	current_compare_value = AONRTCCurrentCompareValueGet();
+	wake_compare_value = current_compare_value + compare_intervall;
+
+	//Add RTC Ch2 event as input to AON RTC interrupt
+	AONRTCCombinedEventConfig(AON_RTC_CH2);
+	//Set RTC ch2 initial compare value
+	AONRTCCompareValueSet(AON_RTC_CH2, wake_compare_value);
+	//Set RTC CH 2 to auto increment mode
+	AONRTCModeCh2Set(AON_RTC_MODE_CH2_NORMALCOMPARE);
+	//Enable channel 2
+	AONRTCChannelEnable(AON_RTC_CH2);
+	//Set device to wake MCU from standby on RTC channel 2
+	HWREG(AON_EVENT_BASE + AON_EVENT_O_MCUWUSEL) = AON_EVENT_MCUWUSEL_WU0_EV_RTC_CH2;
+}
+
+// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
 
 void powerEnableAuxForceOn(void) {
   HWREGBITW(AON_WUC_BASE + AON_WUC_O_AUXCTL,AON_WUC_AUXCTL_AUX_FORCE_ON_BITN)=1;

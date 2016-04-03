@@ -1,0 +1,28 @@
+Sensortag CC26xx Technical Manual: Chapter 11 IO
+-----------------------------------------------------
+
+Terms:
+- Pins = Alles das zu einem ChipIO führt (inkl. Leitungen und Anbindungen ausserhalb)
+- PORTID: Name of a Function for peripherals
+- GPIO: Name of a function for peripherals which starts at 0x00
+- DIO: logische Namen für ein bestimmtes Packet
+- Jeder Peripheral-Typ hat seine PORTID. (wichtig für Basic I/O Mapping)
+Zwei IO Bereiche:
+- Interrupts on GPIO brauchen Speisung.
+- Daneben gibt es einen limitierten Bereich, 
+  dessen IOs für spezifische Funktionalitäten gebraucht werden könnne
+  Dies ist der AON-Bereich
+  
+Basic I/O Mapping
+-------------------
+To map a peripheral function to DIOn, where n can range from 0 to a maximum of 31, 
+the PORTID and pin configuration must be set in the corresponding IOC:IOCFGn register. 
+
+To select what kind of function the pin must be routed, choose the PORTID number for the desired peripheral function and write the
+PORTID number to the IOC:IOCFGn.PORTID bit field.  -> ioc.c
+The function can be set by using the following driver library function:
+-----------------------------------------------
+IOCPortConfigureSet(DIOn, PORTID, PIN-CONFIG);
+-----------------------------------------------------
+See Section 11.6, Unused I/O Pins to see the kind of configurations that can be set in PIN-CONFIG.
+

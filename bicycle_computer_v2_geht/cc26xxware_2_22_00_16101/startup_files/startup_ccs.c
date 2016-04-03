@@ -3,6 +3,11 @@
 *
 *  Konstanten für die Applikation liegen in config.h
 *
+* Importierte Handler:
+* - GPIO-Handler von main.c
+* - RF-Handler von radio.c
+* - RTC-Handler von rtc.c
+*
 ******************************************************************************/
 
 
@@ -18,22 +23,41 @@
 // *********************************************
 // Includes for Hanlder
 //
-// ********************************
+// *********************************************
 
-#include <../inc/hw_types.h>
-#include "../inc/hw_memmap.h"
-
-#include "../driverLib/ioc.h"
-#include "../driverLib/sys_ctrl.h"
-#include "../../board.h"
-
-
+// generell
 #include "../../config.h"
-#include "../driverLib/gpio.h"
-#include "../interfaces/board-i2c.h"
-
 #include "../system.h"
 #include "../inc/hw_aon_event.h"
+#include <../inc/hw_types.h>
+#include "../inc/hw_memmap.h"
+#include "../driverLib/sys_ctrl.h"
+
+// für gpio
+#include "../driverLib/gpio.h"
+#include "../driverLib/ioc.h"
+#include "../../board.h"
+
+// aus radio.c
+#include "../inc/hw_rfc_dbell.h"
+
+// aus rtc.c
+#include "../inc/hw_aon_event.h"
+#include "../inc/hw_ints.h"
+#include "../inc/hw_nvic.h"
+#include "../driverLib/aon_rtc.h"
+#include "../driverLib/sys_ctrl.h"
+
+
+// *********************************************
+// Global variables for Handler
+// *********************************************
+
+// set global in main
+volatile bool rfBootDone          = 0;
+volatile bool rfSetupDone         = 0;
+volatile bool rfAdvertisingDone   = 0;
+
 
 //*****************************************************************************
 //
@@ -46,7 +70,7 @@ static void FaultISR( void );
 static void IntDefaultHandler( void );
 extern int  main(void);
 
-
+// -------------------------
 
 extern void MPUFaultIntHandler( void );
 extern void BusFaultIntHandler( void );
@@ -55,11 +79,11 @@ extern void SVCallIntHandler( void );
 extern void DebugMonIntHandler( void );
 extern void PendSVIntHandler( void );
 extern void SysTickIntHandler( void );
-extern void GPIOIntHandler( void );
+extern void GPIOIntHandler( void ); //used
 extern void I2CIntHandler( void );
-extern void RFCCPE1IntHandler( void );
-extern void AONIntHandler( void );
-extern void AONRTCIntHandler( void );
+extern void RFCCPE1IntHandler( void ); // used
+extern void AONIntHandler( void ); // used
+extern void AONRTCIntHandler( void ); // used
 extern void UART0IntHandler( void );
 extern void AUXSWEvent0IntHandler( void );
 extern void SSI0IntHandler( void );
@@ -266,6 +290,7 @@ static void DebugMonIntHandler( void ){ while(1) {}}
 static void PendSVIntHandler( void ){ while(1) {}}
 static void SysTickIntHandler( void ){ while(1) {}}
 
+
 static void GPIOIntHandler(void){
 
 	uint32_t interrupt_pin_mask;
@@ -296,8 +321,6 @@ static void GPIOIntHandler(void){
 
 		int bb = 1;
 
-
-
 		// Power off
 		powerDisablePeriph();
 		HWREGBITW(PRCM_BASE + PRCM_O_GPIOCLKGR, PRCM_GPIOCLKGR_CLK_EN_BITN) = 0; // Disable clock for GPIO in CPU run mode
@@ -318,8 +341,53 @@ static void UART0IntHandler( void ){ while(1) {}}
 static void AUXSWEvent0IntHandler( void ){ while(1) {}}
 static void SSI0IntHandler( void ){ while(1) {}}
 static void SSI1IntHandler( void ){ while(1) {}}
+
 static void RFCHardwareIntHandler( void ){ while(1) {}}
 static void RFCCmdAckIntHandler( void ){ while(1) {}}
+
+
+//Radio CPE ch 1 interrupt - used for BOOT_DONE ISR (by default on CH1)
+void RFCCPE1IntHandler(void) {
+
+	//Clear all RFCore ISR flags and wait until done
+	do {
+		HWREG(RFC_DBELL_BASE + RFC_DBELL_O_RFCPEIFG) = ~RFC_DBELL_RFCPEIFG_BOOT_DONE_M;
+	}
+	while(HWREG(RFC_DBELL_BASE + RFC_DBELL_O_RFCPEIFG)  & RFC_DBELL_RFCPEIFG_BOOT_DONE_M);
+
+	rfBootDone = 1;
+}
+
+
+//Radio CPE ch 0 interrupt. Used for CMD_DONE and LAST_CMD_DONE (by default on CH0)
+//
+void RFCCPE0IntHandler(void) {
+
+  uint32_t interrupts = HWREG(RFC_DBELL_BASE + RFC_DBELL_O_RFCPEIFG);
+
+  if(interrupts & RFC_DBELL_RFCPEIFG_COMMAND_DONE_M) {
+    rfSetupDone = 1;
+    HWREG(RFC_DBELL_BASE + RFC_DBELL_O_RFCPEIEN) &= ~RFC_DBELL_RFCPEIEN_COMMAND_DONE_M;
+
+    do {
+      HWREG(RFC_DBELL_BASE + RFC_DBELL_O_RFCPEIFG) = ~RFC_DBELL_RFCPEIFG_COMMAND_DONE_M;
+    }
+    while(HWREG(RFC_DBELL_BASE + RFC_DBELL_O_RFCPEIFG) & RFC_DBELL_RFCPEIFG_COMMAND_DONE_M);
+    }
+
+  if(interrupts & RFC_DBELL_RFCPEIFG_LAST_COMMAND_DONE_M) {
+    rfAdvertisingDone = 1;
+    HWREG(RFC_DBELL_BASE + RFC_DBELL_O_RFCPEIEN) &= ~RFC_DBELL_RFCPEIEN_LAST_COMMAND_DONE_M;
+
+    do {
+      HWREG(RFC_DBELL_BASE + RFC_DBELL_O_RFCPEIFG) = ~RFC_DBELL_RFCPEIFG_LAST_COMMAND_DONE_M;
+    }
+    while(HWREG(RFC_DBELL_BASE + RFC_DBELL_O_RFCPEIFG) & RFC_DBELL_RFCPEIFG_LAST_COMMAND_DONE_M);
+    }
+
+
+}
+
 static void I2SIntHandler( void ){ while(1) {}}
 static void AUXSWEvent1IntHandler( void ){ while(1) {}}
 static void WatchdogIntHandler( void ){ while(1) {}}
@@ -337,8 +405,25 @@ static void uDMAErrIntHandler( void ){ while(1) {}}
 static void FlashIntHandler( void ){ while(1) {}}
 static void SWEvent0IntHandler( void ){ while(1) {}}
 static void AUXCombEventIntHandler( void ){ while(1) {}}
+
 static void AONProgIntHandler( void ){ while(1) {}}
+
+//RTC interrupt handler
+void AONRTCIntHandler(void) {
+
+	// Clear RTC event flag: Code from PA
+	  HWREGBITW(AON_RTC_BASE + AON_RTC_O_EVFLAGS, AON_RTC_EVFLAGS_CH2_BITN) = 1;
+
+	 /* normal Code -------------------------------start
+	  // Clear RTC event flag
+	  do{
+		AONRTCEventClear(AON_RTC_CH2);
+	  }
+	  while( AONRTCEventGet(AON_RTC_CH2));
+	 ----------------------------------------------------end*/
+}
 static void DynProgIntHandler( void ){ while(1) {}}
 static void AUXCompAIntHandler( void ){ while(1) {}}
 static void AUXADCIntHandler( void ){ while(1) {}}
 static void TRNGIntHandler( void ){ while(1) {}}
+

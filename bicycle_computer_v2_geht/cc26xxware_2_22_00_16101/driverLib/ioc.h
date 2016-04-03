@@ -1,7 +1,6 @@
 /******************************************************************************
 *  Filename:       ioc.h
-*
-*
+
 ******************************************************************************/
 
 
@@ -384,7 +383,7 @@ extern "C"
 //!
 //! \return None
 //
-//*****************************************************************************
+//***************************************************************************** !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 extern void IOCPortConfigureSet(uint32_t ui32IOId, uint32_t ui32PortId,
                                 uint32_t ui32IOConfig);
 
@@ -406,11 +405,11 @@ extern void IOCPortConfigureSet(uint32_t ui32IOId, uint32_t ui32PortId,
 //! See \ref IOCPortConfigureSet() for configuration options.
 //
 //*****************************************************************************
-extern uint32_t IOCPortConfigureGet(uint32_t ui32IOId);
+extern uint32_t IOCPortConfigureGet(uint32_t ui32IOId);  // !!!!!!!!!!!!!!!!!!!!!
 
 //*****************************************************************************
 //
-//! \brief Set wake-up on an IO port.
+//! \brief Set wake-up on an IO port. !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 //!
 //! This function is used to set the wake-up mode of an IO.
 //!
@@ -465,7 +464,7 @@ extern void IOCIOModeSet(uint32_t ui32IOId, uint32_t ui32IOMode);
 //! \param ui32Int enables/disables interrupt generation on this IO port.
 //! - \ref IOC_INT_ENABLE
 //! - \ref IOC_INT_DISABLE
-//! \param ui32EdgeDet enables/disables edge detection events on this IO port.
+//! \param ui32EdgeDet enables/disables edge detection events on this IO port. !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 //! - \ref IOC_NO_EDGE
 //! - \ref IOC_FALLING_EDGE
 //! - \ref IOC_RISING_EDGE
@@ -655,15 +654,15 @@ extern void IOCIOPortIdSet(uint32_t ui32IOId, uint32_t ui32PortId);
 
 //*****************************************************************************
 //
-//! \brief Register an interrupt handler for an IO edge interrupt.
+//! \brief Register an interrupt handler for an IO edge interrupt. !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 //!
 //! This function does the actual registering of the interrupt handler. This
 //! function enables the global interrupt in the interrupt controller; specific
 //! IO interrupts must be enabled via \ref IOCIntEnable(). It is the interrupt
-//! handler's responsibility to clear the interrupt source.
+//! handler's responsibility to clear the interrupt source. !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 //!
 //! \param pfnHandler is a pointer to the function to be called when the
-//! IOC interrupt occurs.
+//! IOC interrupt occurs. !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 //!
 //! \return None
 //!

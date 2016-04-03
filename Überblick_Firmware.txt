@@ -1,0 +1,48 @@
+﻿Sensortag Firmeware überblick
+
+- Firmware BicycleComputer:
+  ********* ohne Verisonierung: Funktioniert und sendet Daten (ist gleich V0, aber neuer Name)
+  Aufbauen auf Dario. Einbauen Geschwindigkeitsmessung
+  
+- V1:
+   **
+
+- Firmware der Studenten:
+  ***********falsche Memory Allocierung **************3
+  - Properties/includepath   pfade anpassen
+  Inhalt: Timer ist im Cortex aufgesetzt, der alle x s aufwacht und auf Daten wartet.
+  Bleibt so lange wach, bis 2 Messungen kamen. 
+  Dann Geschwindigkeitsrechnung und Daten per BLE senden
+  
+  
+- Firmware Dario V0
+  ********falsche Pfade *********************
+  Cortex erwacht, wenn am Pin das Signal zum Aufwachen kommt. Dann wird ein Datenpacket versendet.
+  Energieverbrauch:
+  3 uA Strom bei Daten kommunikation
+  
+  main:
+  - sendet alle n = 400 ms BLE adv. packet
+	-> set up advertising mode
+	-> Konfiguration WAKE_INTERVAL 
+	-> Konfiguration recharge period (falls WAKE_INTERVAL > 400 ms)
+  - Daten kommen von GPIO
+    -> Konfigurationen IOS
+  - Konfigurationen Outputleistung
+
+  - GPIO Handler: 
+    - Speisen Domains aufgrund Interrupt (gibt Flag)
+	  - Pin maskieren,
+	  - Flag löschen
+	  - Pin ausschalten
+	  - Clock abschalten
+	  
+  - Sensor inti
+	- temp off
+	- Drehzahl off
+	- shut down I2C
+	
+  LED init
+	- GPIO verbinden mit BOARD_LED 	
+  
+  
