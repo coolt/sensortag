@@ -91,24 +91,23 @@ extern volatile bool rfSetupDone;
 extern volatile bool rfAdvertisingDone;
 
 
-
 int main(void) {
 
 	uint8_t payload[ADVLEN]; // data buffer
 
 	// power off
-	AONWUCJtagPowerOff(); //Disable JTAG to allow for Standby
+	AONWUCJtagPowerOff(); //Disable JTAG to allow for Standby, (needed for events, baek)
 
 	// power on
-	powerEnableAuxForceOn();
+	powerEnableAuxForceOn(); // for event (baek)
 	powerEnableRFC();
 	powerEnableXtalInterface();
 
 	// reduce clk
 	powerDivideInfClkDS(PRCM_INFRCLKDIVDS_RATIO_DIV32); // Divide INF clk to save Idle mode power (increases interrupt latency)
 
-	// Change
-	//initRTC(); // init Interrupt AON RTC, set variables
+	// 2 Version, now: Darios (without calculation)
+	initRTC(); // init Interrupt AON RTC, set variables
 
 	// power on
 	powerEnablePeriph();
@@ -116,6 +115,8 @@ int main(void) {
 	while((PRCMPowerDomainStatus(PRCM_DOMAIN_PERIPH) != PRCM_DOMAIN_POWER_ON)); /* Wait for domains to power on */
 
 	sensorsInit();
+
+	// LED Init ????
 
 	// Set Interrupts
 	// ---------------
@@ -133,7 +134,7 @@ int main(void) {
 	//IOCPortConfigureSet(BAT_LOW, IOC_PORT_GPIO, IOC_IOMODE_NORMAL | IOC_FALLING_EDGE | IOC_INT_ENABLE | IOC_IOPULL_UP | IOC_INPUT_ENABLE | IOC_WAKE_ON_LOW);
 	//HWREG(AON_EVENT_BASE + AON_EVENT_O_MCUWUSEL) = AON_EVENT_MCUWUSEL_WU0_EV_PAD;  //Set device to wake MCU from standby all pins
 
-	IntEnable(INT_EDGE_DETECT);
+	IntEnable(INT_EDGE_DETECT); // setzt Int auf NVIC
 	// -----------------------------------------------------------
 
 	// power off: No because of LED

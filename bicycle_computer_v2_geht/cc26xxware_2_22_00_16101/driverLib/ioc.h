@@ -676,7 +676,7 @@ IOCIntRegister(void (*pfnHandler)(void))
     //
     // Register the interrupt handler.
     //
-    IntRegister(INT_EDGE_DETECT, pfnHandler);
+    IntRegister(INT_EDGE_DETECT, pfnHandler); // see interrupt.c
 
     //
     // Enable the IO edge interrupt.

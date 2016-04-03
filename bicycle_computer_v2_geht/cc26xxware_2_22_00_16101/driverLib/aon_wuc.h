@@ -427,7 +427,7 @@ AONWUCAuxSRamConfig(uint32_t ui32Retention)
 //!
 //! \return None
 //
-//*****************************************************************************
+//***************************************************************************** !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!used in system.c
 __STATIC_INLINE void
 AONWUCAuxWakeupEvent(uint32_t ui32Mode)
 {
@@ -509,7 +509,7 @@ AONWUCAuxImageInvalid(void)
 //
 //*****************************************************************************
 __STATIC_INLINE uint32_t
-AONWUCPowerStatusGet(void) ?// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+AONWUCPowerStatusGet(void) // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 {
     //
     // Return the power status.

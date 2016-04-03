@@ -554,7 +554,7 @@
 #define AON_EVENT_MCUWUSEL_WU0_EV_RTC_CH2                           0x00000025
 #define AON_EVENT_MCUWUSEL_WU0_EV_RTC_CH1                           0x00000024
 #define AON_EVENT_MCUWUSEL_WU0_EV_RTC_CH0                           0x00000023
-#define AON_EVENT_MCUWUSEL_WU0_EV_PAD                               0x00000020
+#define AON_EVENT_MCUWUSEL_WU0_EV_PAD                               0x00000020  // used
 #define AON_EVENT_MCUWUSEL_WU0_EV_PAD31                             0x0000001F
 #define AON_EVENT_MCUWUSEL_WU0_EV_PAD30                             0x0000001E
 #define AON_EVENT_MCUWUSEL_WU0_EV_PAD29                             0x0000001D

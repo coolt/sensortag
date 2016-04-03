@@ -281,7 +281,7 @@ void initInterrupts(void) {  //baek: this are only RF interrupts and RTC
 
 void initRTC(void) { // Function from Dario (not in PA
 
-	//Add RTC Ch2 event as input to AON RTC interrupt
+	//Add all needed RTC events. Here only Ch2 event as input to AON RTC interrupt
 	AONRTCCombinedEventConfig(AON_RTC_CH2);
 
 	//Set RTC ch 2 auto increment
@@ -294,8 +294,9 @@ void initRTC(void) { // Function from Dario (not in PA
 	//Enable channel 2
 	AONRTCChannelEnable(AON_RTC_CH2);
 
-
-	//Set device to wake MCU from standby on RTC channel 2
+	// Set event directly as MCU Event (not a Event-Fabric Event)
+	// -----------------------------------------------------------
+	// Wake up MCU after by event from RTC channel 2
 	HWREG(AON_EVENT_BASE + AON_EVENT_O_MCUWUSEL) = AON_EVENT_MCUWUSEL_WU0_EV_RTC_CH2;
 
 	//Enable RTC
@@ -326,7 +327,9 @@ void initRTC_WUms(uint32_t ms){  // new function only PA
 
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-
+// copied code from: aon_wuc: (Event Wake up Steuerung)
+// AONWUCAuxWakeupEvent(uint32_t ui32Mode);   WUC Modes: 1 = Wake up from Event,  0 = Sleep until Event
+//  { HWREGBITW(AON_WUC_BASE + AON_WUC_O_AUXCTL, AON_WUC_AUXCTL_AUX_FORCE_ON_BITN) = ui32Mode; }
 void powerEnableAuxForceOn(void) {
   HWREGBITW(AON_WUC_BASE + AON_WUC_O_AUXCTL,AON_WUC_AUXCTL_AUX_FORCE_ON_BITN)=1;
 }
@@ -335,6 +338,7 @@ void powerDisableAuxForceOn(void) {
   HWREGBITW(AON_WUC_BASE + AON_WUC_O_AUXCTL,AON_WUC_AUXCTL_AUX_FORCE_ON_BITN)=0;
 }
 
+// ---------------------------------------
 void powerEnableCache(void) {
   VIMSModeSafeSet(VIMS_BASE, VIMS_MODE_ENABLED, true);
 }
