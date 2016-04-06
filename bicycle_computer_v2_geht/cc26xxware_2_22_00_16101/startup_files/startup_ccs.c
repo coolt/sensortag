@@ -160,7 +160,7 @@ void (* const g_pfnVectors[])(void) =
     SysTickIntHandler,                      // The SysTick handler
     GPIOIntHandler,                         // AON edge detect
     I2CIntHandler,                          // I2C
-    RFCCPE1IntHandler,                      // RF Core Command & Packet Engine 1
+    RFCCPE1IntHandler,                      // RF Core Command & Packet Engine 1  // used
     AONIntHandler,                          // AON SpiSplave Rx, Tx and CS
     AONRTCIntHandler,                       // AON RTC
     UART0IntHandler,                        // UART0 Rx and Tx
@@ -210,20 +210,14 @@ void (* const g_pfnVectors[])(void) =
 void
 ResetISR(void)
 {
-    //
     // Final trim of device
-    //
     trimDevice();
 
-    //
     // Jump to the CCS C Initialization Routine.
-    //
     __asm("    .global _c_int00\n"
             "    b.w     _c_int00");
 
-    //
     // If we ever return signal Error
-    //
     FaultISR();
 }
 
@@ -237,9 +231,8 @@ ResetISR(void)
 static void
 NmiSR(void)
 {
-    //
+
     // Enter an infinite loop.
-    //
     while(1)
     {
     }
@@ -255,9 +248,7 @@ NmiSR(void)
 static void
 FaultISR(void)
 {
-    //
-    // Enter an infinite loop.
-    //
+
     while(1)
     {
     }
@@ -274,9 +265,6 @@ FaultISR(void)
 static void
 IntDefaultHandler(void)
 {
-    //
-    // Go into an infinite loop.
-    //
     while(1)
     {
     }
@@ -302,11 +290,11 @@ static void GPIOIntHandler(void){
 		powerEnableGPIOClockRunMode();
 		while((PRCMPowerDomainStatus(PRCM_DOMAIN_PERIPH) != PRCM_DOMAIN_POWER_ON)); /* Wait for domains to power on */
 
-		// get interrupt
-		interrupt_pin_mask = (HWREG(GPIO_BASE + GPIO_O_EVFLAGS31_0) & GPIO_PIN_MASK);
+		// get gpio interrupt
+		interrupt_pin_mask = (HWREG(GPIO_BASE + GPIO_O_EVFLAGS31_0)); // delete: & GPIO_PIN_MASK
 
 		/* Clear the interrupt flags */
-			HWREG(GPIO_BASE + GPIO_O_EVFLAGS31_0) = interrupt_pin_mask;
+		HWREG(GPIO_BASE + GPIO_O_EVFLAGS31_0) = interrupt_pin_mask;
 
 		switch(interrupt_pin_mask){
 			case button:
@@ -346,7 +334,7 @@ static void RFCHardwareIntHandler( void ){ while(1) {}}
 static void RFCCmdAckIntHandler( void ){ while(1) {}}
 
 
-//Radio CPE ch 1 interrupt - used for BOOT_DONE ISR (by default on CH1)
+//Radio CPE ch 1 interrupt - (Nr. 9) used for BOOT_DONE ISR (by default on CH1)
 void RFCCPE1IntHandler(void) {
 
 	//Clear all RFCore ISR flags and wait until done

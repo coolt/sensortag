@@ -142,7 +142,7 @@ void initRadio(void) {
   cmdAdv2.pNextOp = (uint8_t *)&cmdFsPd;
 }
 
-void initRadioInts(void) {
+void initRadioInts(void) {   // Boot Done = Nr.9
 
   // Enable interrupt for BOOT_DONE and LAST_CMD_DONE
   uint32_t intVecs = RFC_DBELL_RFCPEIEN_BOOT_DONE_M |
@@ -159,6 +159,7 @@ static inline void radioSendCommand(uint32_t cmd) {
 
 //Timed wait for radio direct commands to complete
 static inline void radioWaitCommandOk(void) {
+	int test = CMDSTA_Pending;
   while( HWREG(RFC_DBELL_BASE + RFC_DBELL_O_CMDSTA) == CMDSTA_Pending);
 }
 
@@ -365,7 +366,9 @@ void powerEnableRFC(void) {
 }
 void powerDisableRFC(void) {
   // Enable RF Core power domain
+  int test1 = HWREGBITW(PRCM_BASE + PRCM_O_PDCTL0RFC , PRCM_PDCTL0RFC_ON_BITN); // value is 0x 04 05 00 01
   HWREGBITW(PRCM_BASE + PRCM_O_PDCTL0RFC , PRCM_PDCTL0RFC_ON_BITN) = 0;
+  int test2 =  HWREGBITW(PRCM_BASE + PRCM_O_PDCTL0RFC , PRCM_PDCTL0RFC_ON_BITN); // value is 0x 00 00 00 00
 }
 
 void powerEnablePeriph(void) {
@@ -451,9 +454,14 @@ void powerEnableXtalInterface(void) {
 }
 
 void waitUntilRFCReady(void) {
-  // Wait until RF Core is turned on
+
+  int test8 = HWREGBITW(PRCM_BASE + PRCM_O_PDSTAT0RFC , PRCM_PDCTL0RFC_ON_BITN); // debugged: RFChip = power off, =0
+
+  // Wait until RF Core is turned on: Who writes this bit !!!
   while(HWREGBITW(PRCM_BASE + PRCM_O_PDSTAT0RFC , PRCM_PDSTAT0RFC_ON_BITN) != 1)
   {}
+
+  int test4 = HWREGBITW(PRCM_BASE + PRCM_O_PDSTAT0RFC , PRCM_PDCTL0RFC_ON_BITN); // debugging: RFChip is on = 0x000028B7
 }
 void waitUntilPeriphReady(void) {
   // Wait until periph is turned on
@@ -461,7 +469,7 @@ void waitUntilPeriphReady(void) {
   {}
 }
 void waitUntilAUXReady(void) {
-  // Wait until AUX is powered on and connected to system bus
-  while(HWREGBITW(AON_WUC_BASE + AON_WUC_O_PWRSTAT, AON_WUC_PWRSTAT_AUX_PD_ON_BITN) != 1)
+  // Wait until AUX is powered on (=1) and connected to system bus
+  while(HWREGBITW(AON_WUC_BASE + AON_WUC_O_PWRSTAT, AON_WUC_PWRSTAT_AUX_PD_ON_BITN) != 1) // solange kein Strom (=0), warten
   {}
 }

@@ -61,7 +61,7 @@ void powerEnableXtalInterface(void);
 
 void waitUntilRFCReady(void);
 void waitUntilPeriphReady(void);
-void waitUntilAUXReady(void);
+void waitUntilAUXReady(void);   // bilds an endlos loop of sending (old) ble data
 
 void powerDivideInfClkDS(uint32_t);
 

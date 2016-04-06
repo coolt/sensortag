@@ -99,7 +99,7 @@ int main(void) {
 	AONWUCJtagPowerOff(); //Disable JTAG to allow for Standby, (needed for events, baek)
 
 	// power on
-	powerEnableAuxForceOn(); // for event (baek)
+	powerEnableAuxForceOn(); // set power to WakeUpEvent
 	powerEnableRFC();
 	powerEnableXtalInterface();
 
@@ -115,8 +115,7 @@ int main(void) {
 	while((PRCMPowerDomainStatus(PRCM_DOMAIN_PERIPH) != PRCM_DOMAIN_POWER_ON)); /* Wait for domains to power on */
 
 	sensorsInit();
-
-	// LED Init ????
+	ledInit();
 
 	// Set Interrupts
 	// ---------------
@@ -138,7 +137,7 @@ int main(void) {
 	// -----------------------------------------------------------
 
 	// power off: No because of LED
-	// powerDisablePeriph(); //Disable clock for GPIO in CPU run mode
+	powerDisablePeriph(); //Disable clock for GPIO in CPU run mode
 	HWREGBITW(PRCM_BASE + PRCM_O_GPIOCLKGR, PRCM_GPIOCLKGR_CLK_EN_BITN) = 0;
 	HWREGBITW(PRCM_BASE + PRCM_O_CLKLOADCTL, PRCM_CLKLOADCTL_LOAD_BITN) = 1; // Load clock settings
 
@@ -178,23 +177,38 @@ int main(void) {
 	// Interrupt shown on LED 1, 2
 	while(1) {  // endlose loop: system is in standby mode, waiting for interrupt on GPIO
 
+
+		// Info Debugging:
+		// goes in while loop
+		// last commit: RF hase not stopped
+		// current commit: RF does not start anymore: Problem is PRCM_O_PDSTAT0RFC is not set
+		// -> see function waitUntilRFReady()
+
+		// Who set this bit ? System is in sleep ->
+		// Possibility: RTC does not wake up the Radio   =>>    powerEnableRFC();
+		// or
+		// RTC wakes up, but don't set this bit
+
 		rfBootDone  = 0;
 		rfSetupDone = 0;
 		rfAdvertisingDone = 0;
 
-		//Wait until RF Core PD is ready before accessing radio
+		//Waiting for interrupt (RTC Timer)
+		//-> starts RF core
+
 		// ----------------------------------------------------
 		// Prepation to send data
 		// -----------------------------------------------------
-		waitUntilRFCReady();
-		initRadioInts();  // define which interrupts are detected (int vector table)
-		runRadio();
+		waitUntilRFCReady(); // is not set (in current version)  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		initRadioInts();  // enable 3 RF Interrupts
+		runRadio(); // =? set interrupt (because while waits for BootDone: interrupt 9)
 
-		waitUntilAUXReady(); //Wait until AUX is ready before configuring oscillators
-		OSCHF_TurnOnXosc();  //Enable 24MHz XTAL (higher clk for sending)
+		waitUntilAUXReady(); // Wait until AUX is powered
+		OSCHF_TurnOnXosc();  // Enable 24MHz XTAL (higher clk for sending)
 		while( ! rfBootDone) { //IDLE until BOOT_DONE interrupt from RFCore is triggered
 			powerDisableCPU();
-			//Request radio to keep on system busPRCMDeepSleep();
+			//Request radio to keep on system
+			// busPRCMDeepSleep();
 		} //This code runs after BOOT_DONE interrupt has woken up the CPU again
 
 		radioCmdBusRequest(true); //Request radio to keep on system bus
@@ -224,9 +238,9 @@ int main(void) {
 		// Standby procedure
 		// ----------------------------------------------------
 		powerDisableXtal();
-		powerDisableRFC(); // Turn off radio
+		powerDisableRFC(); // Turn off radio.  Checked: Flag changes from 1 to 0.
 		OSCHfSourceSwitch(); // Switch to RCOSC_HF
-		powerDisableAuxForceOn(); // Allow AUX to turn off again. No longer need oscillator interface
+		powerDisableAuxForceOn();
 		powerEnableMcuPdReq(); // Goto Standby. MCU will now request to be powered down on DeepSleep
 		powerDisableCache(); // Disable cache and retention
 		powerDisableCacheRetention();
@@ -237,25 +251,31 @@ int main(void) {
 
 		// Enter Standby
 		// --------------------------------------------------
+		int testx =  HWREGBITW(PRCM_BASE + PRCM_O_PDCTL0RFC , PRCM_PDCTL0RFC_ON_BITN);  // for debugging: RFChip = 0, so power down is still correct
 		powerDisableCPU();
 		PRCMDeepSleep();
 		SysCtrlAonUpdate();
 		SysCtrlAdjustRechargeAfterPowerDown();   // AFTER POWER DOWN: Set refresh cycle
 		SysCtrlAonSync();
 
+		testx =  HWREGBITW(PRCM_BASE + PRCM_O_PDCTL0RFC , PRCM_PDCTL0RFC_ON_BITN); // for debugging: if RFChip = power down, then = 0
 
+/* old code:
+ *  -> is know in RTC Wake up interrupt
 		// Wakeup from RTC every 100ms, code starts execution from here
 		// ---------------------------------------------
 		// WAITING FOR INTERRUPT
 		// HERE: OLD CODE. FIX WAKE UP TIME
 		powerEnableRFC();
 		powerEnableAuxForceOn();
-
+*/
 		//Re-enable cache and retention
 		powerEnableCache();
 		powerEnableCacheRetention();
 
 		//MCU will not request to be powered down on DeepSleep -> System goes only to IDLE
 		powerDisableMcuPdReq();
-		} // standby endlose loop: waiting for interrupt
+		}
+	    // standby endlose loop: waiting for interrupt
+
 }
