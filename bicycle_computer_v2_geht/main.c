@@ -3,9 +3,10 @@
  *  - Wegen LED GPIO Port nicht abstellen
  */
 
-// Debugging:
-//
-/*
+// Generel debugging informations
+// ------------------------------------
+/* -> Current debugging informations at the begins of the while-loop
+ *
  * cpu.h
  * -----
  *
@@ -64,7 +65,10 @@
  * void IntPendClear(uint32_t ui32Interrupt);
  *
  */
+void initSensortag(){
 
+
+}
 #include "cc26xxware_2_22_00_16101/driverLib/ioc.h"  // Alle Grundeinstellungen (was wie aktiv ist)
 #include "cc26xxware_2_22_00_16101/driverLib/sys_ctrl.h"  // Bus, CPU, Refresh
 
@@ -100,9 +104,9 @@ int main(void) {
 
 	// power on
 	powerEnableAuxForceOn(); // set power to WakeUpEvent
-	powerEnableRFC();
+	powerEnableRFC(); // set power Bit, on which the function waitRFCReady()
 	powerEnableXtalInterface();
-
+	int test_powerRFC = HWREGBITW(PRCM_BASE + PRCM_O_PDCTL0RFC , PRCM_PDCTL0RFC_ON_BITN); // = 1, o.k.
 	// reduce clk
 	powerDivideInfClkDS(PRCM_INFRCLKDIVDS_RATIO_DIV32); // Divide INF clk to save Idle mode power (increases interrupt latency)
 
@@ -171,7 +175,7 @@ int main(void) {
 	//Start radio setup and linked advertisment
 	radioUpdateAdvData(10, payload); //Update advertising byte based on IO inputs
 
-
+	test_powerRTC = HWREGBITW(PRCM_BASE + PRCM_O_PDCTL0RFC , PRCM_PDCTL0RFC_ON_BITN); // = 1;  o.k.
 	// +++++++++++++++++++++++++++++++++++++++
 	// Interrupt driven device
 	// Interrupt shown on LED 1, 2
@@ -179,15 +183,11 @@ int main(void) {
 
 
 		// Info Debugging:
-		// goes in while loop
-		// last commit: RF hase not stopped
-		// current commit: RF does not start anymore: Problem is PRCM_O_PDSTAT0RFC is not set
-		// -> see function waitUntilRFReady()
-
-		// Who set this bit ? System is in sleep ->
-		// Possibility: RTC does not wake up the Radio   =>>    powerEnableRFC();
+		// ------------------
+		// powerEnableRFC(); doesn't work
+		// - RTC does not enable RFCPowerDomain
 		// or
-		// RTC wakes up, but don't set this bit
+		// - RTC itself does not wake up
 
 		rfBootDone  = 0;
 		rfSetupDone = 0;
@@ -195,11 +195,12 @@ int main(void) {
 
 		//Waiting for interrupt (RTC Timer)
 		//-> starts RF core
-
+		test_powerRTC = HWREGBITW(PRCM_BASE + PRCM_O_PDCTL0RFC , PRCM_PDCTL0RFC_ON_BITN); // = 1, o.k.
 		// ----------------------------------------------------
 		// Prepation to send data
 		// -----------------------------------------------------
-		waitUntilRFCReady(); // is not set (in current version)  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		waitUntilRFCReady(); // is set from beginning, because of init (o.k.)
+		test_powerRTC = HWREGBITW(PRCM_BASE + PRCM_O_PDCTL0RFC , PRCM_PDCTL0RFC_ON_BITN); // = 1, o.k.
 		initRadioInts();  // enable 3 RF Interrupts
 		runRadio(); // =? set interrupt (because while waits for BootDone: interrupt 9)
 
@@ -239,6 +240,8 @@ int main(void) {
 		// ----------------------------------------------------
 		powerDisableXtal();
 		powerDisableRFC(); // Turn off radio.  Checked: Flag changes from 1 to 0.
+		int debugg = HWREGBITW(PRCM_BASE + PRCM_O_PDCTL0RFC , PRCM_PDCTL0RFC_ON_BITN); // = 0
+
 		OSCHfSourceSwitch(); // Switch to RCOSC_HF
 		powerDisableAuxForceOn();
 		powerEnableMcuPdReq(); // Goto Standby. MCU will now request to be powered down on DeepSleep

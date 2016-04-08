@@ -268,9 +268,9 @@ void sensorsInit(void)
 // Enable interrupt on CPU
 void initInterrupts(void) {  //baek: this are only RF interrupts and RTC
 
-	// CPE1 - Int channels 31:16: Boot done is bit 30
+	// RFChip: CPE1 - Int channels 31:16: Boot done is bit 30
 	HWREG(NVIC_EN0) = 1 << (INT_RF_CPE1 - 16);
-	// CPE0 - Int channels  15:0: CMD_DONE is bit 1, LAST_CMD_DONE is bit 0
+	// RFChip: CPE0 - Int channels  15:0: CMD_DONE is bit 1, LAST_CMD_DONE is bit 0
 	HWREG(NVIC_EN0) = 1 << (INT_RF_CPE0 - 16);
 
 	// RTC combined event output
@@ -280,32 +280,45 @@ void initInterrupts(void) {  //baek: this are only RF interrupts and RTC
 	CPUcpsie();
 }
 
-void initRTC(void) { // Function from Dario (not in PA
+void initRTC() {
 
-	//Add all needed RTC events. Here only Ch2 event as input to AON RTC interrupt
-	AONRTCCombinedEventConfig(AON_RTC_CH2);
+	//Add all needed RTC channels
+	AONRTCCombinedEventConfig(AON_RTC_CH0 | AON_RTC_CH1);
 
-	//Set RTC ch 2 auto increment
-	AONRTCIncValueCh2Set(WAKE_INTERVAL_TICKS);
-	//Set RTC ch2 initial compare value
+	// WAKE UP CHANNEL 0:
+	// -----------------------------
+	// must have highest priority !!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	//Set RTC ch  auto increment
+	AONRTCIncValueCh0Set(WAKE_INTERVAL_TICKS);
+	//Set RTC ch initial compare value
 	AONRTCCompareValueSet(AON_RTC_CH2, WAKE_INTERVAL_TICKS);
 	//Set RTC CH 2 to auto increment mode
-	AONRTCModeCh2Set(AON_RTC_MODE_CH2_CONTINUOUS);
-
-	//Enable channel 2
-	AONRTCChannelEnable(AON_RTC_CH2);
+	//AONRTCModeCh2Set(AON_RTC_MODE_CH2_CONTINUOUS);
 
 	// Set event directly as MCU Event (not a Event-Fabric Event)
 	// -----------------------------------------------------------
-	// Wake up MCU after by event from RTC channel 2
-	HWREG(AON_EVENT_BASE + AON_EVENT_O_MCUWUSEL) = AON_EVENT_MCUWUSEL_WU0_EV_RTC_CH2;
+	// Wake up MCU after by event from RTC channel 0
+	HWREG(AON_EVENT_BASE + AON_EVENT_O_MCUWUSEL) = AON_EVENT_MCUWUSEL_WU0_EV_RTC_CH0;
 
-	//Enable RTC
+	// SPEED MEASURING CHANNEL 1:
+	// ------------------------------------------
+	//Set RTC CH 1 to auto increment mode
+	AONRTCModeCh1Set(AON_RTC_MODE_CH1_NORMALCOMPARE);
+	//Set RTC ch1 initial compare value
+	AONRTCCompareValueSet(AON_RTC_CH1, 0); // ?????????????????????????????????????
+	//Enable channel
+	AONRTCChannelEnable(AON_RTC_CH1);
+	//Set device to wake MCU from standby on RTC channel 1
+	HWREG(AON_EVENT_BASE + AON_EVENT_O_MCUWUSEL) = AON_EVENT_MCUWUSEL_WU0_EV_RTC_CH1;
+
+	//Enable used channel and AON generally
+	AONRTCChannelEnable(AON_RTC_CH0);
+	AONRTCChannelEnable(AON_RTC_CH1);
 	AONRTCEnable();
 }
 
 
-void initRTC_WUms(uint32_t ms){  // new function only PA
+void setRTC_CompareValue(uint32_t ms){  // needs time input for speed calculation
 
 	uint32_t compare_intervall = ms * 65536 / 1000;
 	uint32_t current_compare_value = 0;
@@ -314,16 +327,13 @@ void initRTC_WUms(uint32_t ms){  // new function only PA
 	current_compare_value = AONRTCCurrentCompareValueGet();
 	wake_compare_value = current_compare_value + compare_intervall;
 
-	//Add RTC Ch2 event as input to AON RTC interrupt
-	AONRTCCombinedEventConfig(AON_RTC_CH2);
+	//Add RTC Ch1 event as input to AON RTC interrupt
+	AONRTCCombinedEventConfig(AON_RTC_CH1);
 	//Set RTC ch2 initial compare value
-	AONRTCCompareValueSet(AON_RTC_CH2, wake_compare_value);
+	AONRTCCompareValueSet(AON_RTC_CH1, wake_compare_value);
 	//Set RTC CH 2 to auto increment mode
-	AONRTCModeCh2Set(AON_RTC_MODE_CH2_NORMALCOMPARE);
-	//Enable channel 2
-	AONRTCChannelEnable(AON_RTC_CH2);
-	//Set device to wake MCU from standby on RTC channel 2
-	HWREG(AON_EVENT_BASE + AON_EVENT_O_MCUWUSEL) = AON_EVENT_MCUWUSEL_WU0_EV_RTC_CH2;
+	AONRTCModeCh1Set(AON_RTC_MODE_CH1_NORMALCOMPARE);
+
 }
 
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -361,14 +371,14 @@ void powerDisableAuxRamRet(void) {
 }
 
 void powerEnableRFC(void) {
-  // Enable RF Core power domain
+  // Enable RF Core power domain. Bit is needed in function waitRFCready()
   HWREGBITW(PRCM_BASE + PRCM_O_PDCTL0RFC , PRCM_PDCTL0RFC_ON_BITN) = 1;
 }
 void powerDisableRFC(void) {
   // Enable RF Core power domain
-  int test1 = HWREGBITW(PRCM_BASE + PRCM_O_PDCTL0RFC , PRCM_PDCTL0RFC_ON_BITN); // value is 0x 04 05 00 01
+  int test1 = HWREGBITW(PRCM_BASE + PRCM_O_PDCTL0RFC , PRCM_PDCTL0RFC_ON_BITN); // = 1; o.k.
   HWREGBITW(PRCM_BASE + PRCM_O_PDCTL0RFC , PRCM_PDCTL0RFC_ON_BITN) = 0;
-  int test2 =  HWREGBITW(PRCM_BASE + PRCM_O_PDCTL0RFC , PRCM_PDCTL0RFC_ON_BITN); // value is 0x 00 00 00 00
+  int test2 =  HWREGBITW(PRCM_BASE + PRCM_O_PDCTL0RFC , PRCM_PDCTL0RFC_ON_BITN); // = 0; o.k.
 }
 
 void powerEnablePeriph(void) {
@@ -455,13 +465,14 @@ void powerEnableXtalInterface(void) {
 
 void waitUntilRFCReady(void) {
 
-  int test8 = HWREGBITW(PRCM_BASE + PRCM_O_PDSTAT0RFC , PRCM_PDCTL0RFC_ON_BITN); // debugged: RFChip = power off, =0
+  int test8 = HWREGBITW(PRCM_BASE + PRCM_O_PDSTAT0RFC , PRCM_PDCTL0RFC_ON_BITN); // debugged: power on = 1, o.k. (beim ersten Durchgang nach Init)
+  	  	  	  	  	  	  	  	  	  	  	  	  	  	  	  	  	  	  	  	 // beim zweiten Druchgang = 0. -> System bleibt hier hängen
 
-  // Wait until RF Core is turned on: Who writes this bit !!!
+  // Wait until RF Core is turned on: The power bit is set by powerEnableRFsC();
   while(HWREGBITW(PRCM_BASE + PRCM_O_PDSTAT0RFC , PRCM_PDSTAT0RFC_ON_BITN) != 1)
   {}
 
-  int test4 = HWREGBITW(PRCM_BASE + PRCM_O_PDSTAT0RFC , PRCM_PDCTL0RFC_ON_BITN); // debugging: RFChip is on = 0x000028B7
+  int test4 = HWREGBITW(PRCM_BASE + PRCM_O_PDSTAT0RFC , PRCM_PDCTL0RFC_ON_BITN); // debugging: power on = 1, o.k.
 }
 void waitUntilPeriphReady(void) {
   // Wait until periph is turned on
