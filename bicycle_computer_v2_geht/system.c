@@ -1,3 +1,5 @@
+#include "config.h"
+#include "radio.h"
 #include "cc26xxware_2_22_00_16101/driverLib/aux_wuc.h"
 #include "cc26xxware_2_22_00_16101/driverLib/cpu.h"
 #include "cc26xxware_2_22_00_16101/driverLib/prcm.h"
@@ -22,16 +24,17 @@
 #include "radio_files/overrides/ble_overrides.h"
 
 // aus rtc.c
-#include "config.h"
 #include "cc26xxware_2_22_00_16101/inc/hw_aon_event.h"
 #include "cc26xxware_2_22_00_16101/inc/hw_ints.h"
 #include "cc26xxware_2_22_00_16101/inc/hw_nvic.h"
 #include "cc26xxware_2_22_00_16101/driverLib/aon_rtc.h"
 #include "cc26xxware_2_22_00_16101/driverLib/sys_ctrl.h"
 
+
+
 // Datastructure BLE
 // Advertisment data. Must be global for other files to access it.
-#pragma data_alignment=4
+#pragma data_alignment = 4
 char advData[ADVLEN] = {0};
 
 
@@ -130,16 +133,29 @@ void powerEnablePeriph(void);
 
 // _______________________-
 void initRadio(void) {
-  // Set radio to BLE mode
-  HWREG(PRCM_BASE + PRCM_O_RFCMODESEL) = 0x1;
 
-   //Set up MAC address. Currently using TI Provided adress
-   devAddress = *((uint64_t*)(FCFG1_BASE+FCFG1_O_MAC_BLE_0));
+	// Fill payload buffer with inital values
+	uint8_t i = 0;
+	g_payload[i++] = 0x01;
+	g_payload[i++] = 0x02;
+	g_payload[i++] = 0x03;
+	g_payload[i++] = 0x04;
+	g_payload[i++] = 0x05;
+	g_payload[i++] = 0x06;
+	g_payload[i++] = 0x07;
+	g_payload[i++] = 0x08;
+	g_payload[i++] = 0x09;
 
-  //Chain advertisment commands.
-  cmdAdv0.pNextOp = (uint8_t *)&cmdAdv1;
-  cmdAdv1.pNextOp = (uint8_t *)&cmdAdv2;
-  cmdAdv2.pNextOp = (uint8_t *)&cmdFsPd;
+	// Set radio to BLE mode
+	HWREG(PRCM_BASE + PRCM_O_RFCMODESEL) = 0x1;
+
+	//Set up MAC address. Currently using TI Provided adress
+	devAddress = *((uint64_t*)(FCFG1_BASE+FCFG1_O_MAC_BLE_0));
+
+	//Chain advertisment commands.
+	cmdAdv0.pNextOp = (uint8_t *)&cmdAdv1;
+	cmdAdv1.pNextOp = (uint8_t *)&cmdAdv2;
+	cmdAdv2.pNextOp = (uint8_t *)&cmdFsPd;
 }
 
 void initRadioInts(void) {   // Boot Done = Nr.9
@@ -182,14 +198,6 @@ void radioSetupAndTransmit() {
   radioSendCommand( (uint32_t)&cmdSetup);
 }
 
-//Update advertising byte based on IO inputs
-void radioUpdateAdvData(int size, char* data) {
-	int i;
-	for(i = 0; i < size; i++)
-	{
-	  advData[i] = data[i];
-	}
-}
 
 
 /** Call this function in Batterymode with TI-SensorTag to Debug your Code
@@ -266,54 +274,80 @@ void sensorsInit(void)
 // *************************************INTERRUPT FUNCTIONS
 
 // Enable interrupt on CPU
-void initInterrupts(void) {  //baek: this are only RF interrupts and RTC
+void initInterrupts(void) {
 
+	// 3 RadioChip-Interrupts
+	// ---------------------------------------------------------
 	// RFChip: CPE1 - Int channels 31:16: Boot done is bit 30
 	HWREG(NVIC_EN0) = 1 << (INT_RF_CPE1 - 16);
 	// RFChip: CPE0 - Int channels  15:0: CMD_DONE is bit 1, LAST_CMD_DONE is bit 0
 	HWREG(NVIC_EN0) = 1 << (INT_RF_CPE0 - 16);
 
+	// 2 Real Time Clock-Interrupt
+	// ---------------------------
 	// RTC combined event output
 	HWREG(NVIC_EN0) = 1 << (INT_AON_RTC - 16);
 
+	 // Enable interrupt for BOOT_DONE and LAST_CMD_DONE
+	  uint32_t intVecs = RFC_DBELL_RFCPEIEN_BOOT_DONE_M |
+	                     RFC_DBELL_RFCPEIEN_COMMAND_DONE_M |
+	                     RFC_DBELL_RFCPEIEN_LAST_COMMAND_DONE_M;
+
+	  HWREG(RFC_DBELL_BASE + RFC_DBELL_O_RFCPEIEN) = intVecs;
+
+	// 2 GPIO- Interrupts
+	// -------------------------------------------------------------
+	// Button = BOARD_IOID_KEY_RIGHT= IOID_4, external interrupt on rising edge and wake up
+	IOCPortConfigureSet(BOARD_IOID_KEY_RIGHT, IOC_PORT_GPIO, IOC_IOMODE_NORMAL | IOC_FALLING_EDGE | IOC_INT_ENABLE | IOC_IOPULL_UP | IOC_INPUT_ENABLE | IOC_WAKE_ON_LOW);
+	HWREG(AON_EVENT_BASE + AON_EVENT_O_MCUWUSEL) = AON_EVENT_MCUWUSEL_WU0_EV_PAD;  //Set device to wake MCU from standby on all pins
+	// Does not work with AON_EVENT_MCUWUSEL_WU0_EV_PAD4, the specific pin for button
+
+	// REED_SWITCH = IOID_25, external interrupt on rising edge and wake up
+	IOCPortConfigureSet(REED_SWITCH, IOC_PORT_GPIO, IOC_IOMODE_NORMAL | IOC_FALLING_EDGE | IOC_INT_ENABLE | IOC_IOPULL_UP | IOC_INPUT_ENABLE | IOC_WAKE_ON_LOW);
+	HWREG(AON_EVENT_BASE + AON_EVENT_O_MCUWUSEL) = AON_EVENT_MCUWUSEL_WU0_EV_PAD;  //Set device to wake MCU from standby from all pins
+
+			// power off: No because of LED
+			//powerDisablePeriph(); //Disable clock for GPIO in CPU run mode
+			//HWREGBITW(PRCM_BASE + PRCM_O_GPIOCLKGR, PRCM_GPIOCLKGR_CLK_EN_BITN) = 0;
+			//HWREGBITW(PRCM_BASE + PRCM_O_CLKLOADCTL, PRCM_CLKLOADCTL_LOAD_BITN) = 1; // Load clock settings
+
 	// Global interrupt enable
+	// ------------------------------
 	CPUcpsie();
 }
 
 void initRTC() {
 
 	//Add all needed RTC channels
-	AONRTCCombinedEventConfig(AON_RTC_CH0 | AON_RTC_CH1);
+	AONRTCCombinedEventConfig(AON_RTC_CH0 | AON_RTC_CH2);
 
 	// WAKE UP CHANNEL 0:
 	// -----------------------------
 	// must have highest priority !!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	//Set RTC ch  auto increment
-	AONRTCIncValueCh0Set(WAKE_INTERVAL_TICKS);
-	//Set RTC ch initial compare value
-	AONRTCCompareValueSet(AON_RTC_CH2, WAKE_INTERVAL_TICKS);
-	//Set RTC CH 2 to auto increment mode
-	//AONRTCModeCh2Set(AON_RTC_MODE_CH2_CONTINUOUS);
+	// Needs Synchronisation and clearing all pending interrupts !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+	//Set compare value on Channel 0
+	int debug = WAKE_INTERVAL;
+	AONRTCCompareValueSet(AON_RTC_CH0, WAKE_INTERVAL); // 0x0010'0000  = 10 s
 
 	// Set event directly as MCU Event (not a Event-Fabric Event)
 	// -----------------------------------------------------------
 	// Wake up MCU after by event from RTC channel 0
 	HWREG(AON_EVENT_BASE + AON_EVENT_O_MCUWUSEL) = AON_EVENT_MCUWUSEL_WU0_EV_RTC_CH0;
 
-	// SPEED MEASURING CHANNEL 1:
+	// SPEED MEASURING CHANNEL 2:
 	// ------------------------------------------
-	//Set RTC CH 1 to auto increment mode
-	AONRTCModeCh1Set(AON_RTC_MODE_CH1_NORMALCOMPARE);
+	//Set RTC CH 2 to auto increment mode
+	AONRTCModeCh2Set(AON_RTC_MODE_CH2_NORMALCOMPARE);
 	//Set RTC ch1 initial compare value
-	AONRTCCompareValueSet(AON_RTC_CH1, 0); // ?????????????????????????????????????
-	//Enable channel
-	AONRTCChannelEnable(AON_RTC_CH1);
+	// AONRTCCompareValueSet(AON_RTC_CH2, 0); // später ?????????????????????????????????????
+
 	//Set device to wake MCU from standby on RTC channel 1
-	HWREG(AON_EVENT_BASE + AON_EVENT_O_MCUWUSEL) = AON_EVENT_MCUWUSEL_WU0_EV_RTC_CH1;
+	HWREG(AON_EVENT_BASE + AON_EVENT_O_MCUWUSEL) = AON_EVENT_MCUWUSEL_WU0_EV_RTC_CH2;
 
 	//Enable used channel and AON generally
 	AONRTCChannelEnable(AON_RTC_CH0);
-	AONRTCChannelEnable(AON_RTC_CH1);
+	// AONRTCChannelEnable(AON_RTC_CH2); später
 	AONRTCEnable();
 }
 
@@ -328,11 +362,11 @@ void setRTC_CompareValue(uint32_t ms){  // needs time input for speed calculatio
 	wake_compare_value = current_compare_value + compare_intervall;
 
 	//Add RTC Ch1 event as input to AON RTC interrupt
-	AONRTCCombinedEventConfig(AON_RTC_CH1);
+	AONRTCCombinedEventConfig(AON_RTC_CH2);
 	//Set RTC ch2 initial compare value
-	AONRTCCompareValueSet(AON_RTC_CH1, wake_compare_value);
+	AONRTCCompareValueSet(AON_RTC_CH2, wake_compare_value);
 	//Set RTC CH 2 to auto increment mode
-	AONRTCModeCh1Set(AON_RTC_MODE_CH1_NORMALCOMPARE);
+	AONRTCModeCh2Set(AON_RTC_MODE_CH2_NORMALCOMPARE);
 
 }
 
