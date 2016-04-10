@@ -1,8 +1,7 @@
 /** V2
  */
 
-
-#include "cc26xxware_2_22_00_16101/driverLib/ioc.h"  // Alle Grundeinstellungen (was wie aktiv ist)
+#include "cc26xxware_2_22_00_16101/driverLib/ioc.h"  // Grundeinstellungen aktivieren domains
 #include "cc26xxware_2_22_00_16101/driverLib/sys_ctrl.h"  // Bus, CPU, Refresh
 
 #include "sensors/sensor-common.h"
@@ -15,7 +14,7 @@
 #include "board.h" // Konstanten IO
 #include "radio.h"
 
-#include "config.h" // Konstanten V1
+#include "config.h" // Konstanten Applikation
 #include "cc26xxware_2_22_00_16101/driverLib/gpio.h" // Konstanten GPIO Pins
 #include "interfaces/board-i2c.h"
 #include "rtc.h"
@@ -30,6 +29,23 @@ extern volatile bool rfAdvertisingDone;
 // globale variable
 uint8_t payload[ADVLEN]; // data buffer
 
+void initGPIOInterrupts(){
+	// Set Interrupts
+		// ---------------
+		// Button = BOARD_IOID_KEY_RIGHT= IOID_4, external interrupt on rising edge and wake up
+		IOCPortConfigureSet(BOARD_IOID_KEY_RIGHT, IOC_PORT_GPIO, IOC_IOMODE_NORMAL | IOC_FALLING_EDGE | IOC_INT_ENABLE | IOC_IOPULL_UP | IOC_INPUT_ENABLE | IOC_WAKE_ON_LOW);
+		HWREG(AON_EVENT_BASE + AON_EVENT_O_MCUWUSEL) = AON_EVENT_MCUWUSEL_WU0_EV_PAD;  //Set device to wake MCU from standby on all pins
+		// Does not work with AON_EVENT_MCUWUSEL_WU0_EV_PAD4, the specific pin for button
+
+		// REED_SWITCH = IOID_25, external interrupt on rising edge and wake up
+		IOCPortConfigureSet(REED_SWITCH, IOC_PORT_GPIO, IOC_IOMODE_NORMAL | IOC_FALLING_EDGE | IOC_INT_ENABLE | IOC_IOPULL_UP | IOC_INPUT_ENABLE | IOC_WAKE_ON_LOW);
+		HWREG(AON_EVENT_BASE + AON_EVENT_O_MCUWUSEL) = AON_EVENT_MCUWUSEL_WU0_EV_PAD;  //Set device to wake MCU from standby from all pins
+
+
+		// BAT_LOW = IOID_28, external interrupt on rising edge and wake up
+		//IOCPortConfigureSet(BAT_LOW, IOC_PORT_GPIO, IOC_IOMODE_NORMAL | IOC_FALLING_EDGE | IOC_INT_ENABLE | IOC_IOPULL_UP | IOC_INPUT_ENABLE | IOC_WAKE_ON_LOW);
+		//HWREG(AON_EVENT_BASE + AON_EVENT_O_MCUWUSEL) = AON_EVENT_MCUWUSEL_WU0_EV_PAD;  //Set device to wake MCU from standby all pins
+}
 
 void initSensortag(void){
 
@@ -38,37 +54,21 @@ void initSensortag(void){
 
 	// power on
 	powerEnableAuxForceOn(); // WUC domain
-
-	powerEnableXtalInterface();
-
-	// reduce clk
+	powerEnableXtalInterface(); // clk WUC
 	powerDivideInfClkDS(PRCM_INFRCLKDIVDS_RATIO_DIV32); // Divide INF clk to save Idle mode power (increases interrupt latency)
 
-	// Change
-	//initRTC(); // for time-calculation,  !! PA Code: automtisches Aufwachen nach 10 s, dann berechnen
 
 	// power on
 	powerEnablePeriph();
 	powerEnableGPIOClockRunMode();
 	while((PRCMPowerDomainStatus(PRCM_DOMAIN_PERIPH) != PRCM_DOMAIN_POWER_ON)); /* Wait for domains to power on */
 
+	// Change
+	//initRTC(); // for time-calculation,  !! PA Code: automtisches Aufwachen nach 10 s, dann berechnen
+
 	sensorsInit();
 
-	// Set Interrupts
-	// ---------------
-	// Button = BOARD_IOID_KEY_RIGHT= IOID_4, external interrupt on rising edge and wake up
-	IOCPortConfigureSet(BOARD_IOID_KEY_RIGHT, IOC_PORT_GPIO, IOC_IOMODE_NORMAL | IOC_FALLING_EDGE | IOC_INT_ENABLE | IOC_IOPULL_UP | IOC_INPUT_ENABLE | IOC_WAKE_ON_LOW);
-	HWREG(AON_EVENT_BASE + AON_EVENT_O_MCUWUSEL) = AON_EVENT_MCUWUSEL_WU0_EV_PAD;  //Set device to wake MCU from standby on all pins
-	// Does not work with AON_EVENT_MCUWUSEL_WU0_EV_PAD4, the specific pin for button
-
-	// REED_SWITCH = IOID_25, external interrupt on rising edge and wake up
-	IOCPortConfigureSet(REED_SWITCH, IOC_PORT_GPIO, IOC_IOMODE_NORMAL | IOC_FALLING_EDGE | IOC_INT_ENABLE | IOC_IOPULL_UP | IOC_INPUT_ENABLE | IOC_WAKE_ON_LOW);
-	HWREG(AON_EVENT_BASE + AON_EVENT_O_MCUWUSEL) = AON_EVENT_MCUWUSEL_WU0_EV_PAD;  //Set device to wake MCU from standby from all pins
-
-
-	// BAT_LOW = IOID_28, external interrupt on rising edge and wake up
-	//IOCPortConfigureSet(BAT_LOW, IOC_PORT_GPIO, IOC_IOMODE_NORMAL | IOC_FALLING_EDGE | IOC_INT_ENABLE | IOC_IOPULL_UP | IOC_INPUT_ENABLE | IOC_WAKE_ON_LOW);
-	//HWREG(AON_EVENT_BASE + AON_EVENT_O_MCUWUSEL) = AON_EVENT_MCUWUSEL_WU0_EV_PAD;  //Set device to wake MCU from standby all pins
+	initGPIOInterrupts();
 
 	IntEnable(INT_EDGE_DETECT);
 	// -----------------------------------------------------------
@@ -86,8 +86,9 @@ void initSensortag(void){
 	powerEnableCacheRetention(); // Cache retention must be enabled in Idle if flash domain is turned off (to avoid cache corruption)
 	powerEnableAUXPdReq(); //AUX - request to power down (takes no effect since force on is set)
 	powerDisableAuxRamRet();
-
 }
+
+
 void getData(void){
 	int i = 8;
 }
@@ -106,7 +107,6 @@ void setData(void){
 	payload[p++] = 0x07;
 	payload[p++] = 0x08;
 	payload[p++] = 0x09;
-
 
 	//Start radio setup and linked advertisment
 	radioUpdateAdvData(10, payload); //Update advertising byte based on IO inputs
