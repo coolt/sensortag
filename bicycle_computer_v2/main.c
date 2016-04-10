@@ -114,52 +114,43 @@ void setData(void){
 
 void sendData(){
 
-	powerEnableRFC(); // set power bit
-
+	// Flags for RF-Communication supervision
 	rfBootDone  = 0;
 	rfSetupDone = 0;
 	rfAdvertisingDone = 0;
 
-	//Wait until RF Core PD is ready before accessing radio
-	// ----------------------------------------------------
-	// Prepation to send data
-	// -----------------------------------------------------
+	powerEnableRFC(); 		// set power bit
 	waitUntilRFCReady();
-	initRadioInts();  // define which interrupts are detected (int vector table)
+			initRadioInts();  		// define which interrupts are detected (int vector table)
 	runRadio();
 
 	waitUntilAUXReady(); //Wait until AUX is ready before configuring oscillators
 	OSCHF_TurnOnXosc();  //Enable 24MHz XTAL (higher clk for sending)
-	while( ! rfBootDone) { //IDLE until BOOT_DONE interrupt from RFCore is triggered
+	while( ! rfBootDone) {
 		powerDisableCPU();
-		//Request radio to keep on system busPRCMDeepSleep();
-	} //This code runs after BOOT_DONE interrupt has woken up the CPU again
-
-	radioCmdBusRequest(true); //Request radio to keep on system bus
-	radioPatch(); //Patch CM0 - no RFE patch needed for TX only
-	radioCmdStartRAT(); //Start radio timer
-	powerEnableFlashInIdle(); //Enable Flash access while doing radio setup
-	while( !OSCHF_AttemptToSwitchToXosc()) //Switch to XTAL
+		// Request radio to keep on system
+		//busPRCMDeepSleep();
+	}
+	radioCmdBusRequest(true); 					// Request radio to keep on system bus
+	radioPatch(); 								// Patch CM0 - no RFE patch needed for TX only
+	radioCmdStartRAT(); 						// Start radio timer
+	powerEnableFlashInIdle(); 					// Enable Flash access while doing radio setup
+	while( !OSCHF_AttemptToSwitchToXosc()) 		//Switch to XTAL
 	{}
 
-	//Start radio setup and linked advertisment
-	// ---------------------------------------------------
 	// SENDING new DATA
-	// ---------------------------------------------------
 	radioSetupAndTransmit();
 	while( ! rfSetupDone) {
 		powerDisableCPU();
 		PRCMDeepSleep();
-	} //Wait in IDLE for CMD_DONE interrupt after radio setup. ISR will disable radio interrupts
-	powerDisableFlashInIdle(); //Disable flash in IDLE after CMD_RADIO_SETUP is done (radio setup reads FCFG trim values)
+	}
+	powerDisableFlashInIdle(); 					// Disable flash in IDLE after CMD_RADIO_SETUP is done (radio setup reads FCFG trim values)
+	// AdvertisingDone = 3 packets send
 	while( ! rfAdvertisingDone) {
 	  powerDisableCPU();
 	  PRCMDeepSleep();
-	} //Wait in IDLE for LAST_CMD_DONE after 3 adv packets
-	radioCmdBusRequest(false); //Request radio to not force on system bus any more
-
-
-
+	}
+	radioCmdBusRequest(false);					//Request radio to not force on system bus any more
 }
 
 void sleep(){
