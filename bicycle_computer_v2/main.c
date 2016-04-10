@@ -11,15 +11,15 @@
 #include "sensors/hdc-1000-sensor.h"
 #include "sensors/opt-3001-sensor.h"
 
-#include "board.h" // Konstanten IO
+#include "board.h" 								// Konstanten IO
 #include "radio.h"
 
-#include "config.h" // Konstanten Applikation
+#include "config.h" 							// Konstanten Applikation
 #include "cc26xxware_2_22_00_16101/driverLib/gpio.h" // Konstanten GPIO Pins
 #include "interfaces/board-i2c.h"
 #include "rtc.h"
 #include "radio.h"
-#include "system.h" // Funktionen (Power), Init, Waits
+#include "system.h" 							// Funktionen (Power), Init, Waits
 #include "cc26xxware_2_22_00_16101/inc/hw_aon_event.h"
 
 extern volatile bool rfBootDone;
@@ -27,34 +27,34 @@ extern volatile bool rfSetupDone;
 extern volatile bool rfAdvertisingDone;
 
 // globale variable
-uint8_t payload[ADVLEN]; // data buffer
+uint8_t payload[ADVLEN]; 						// data buffer
 
 void initGPIOInterrupts(){
+
 	// Set Interrupts
-		// ---------------
-		// Button = BOARD_IOID_KEY_RIGHT= IOID_4, external interrupt on rising edge and wake up
-		IOCPortConfigureSet(BOARD_IOID_KEY_RIGHT, IOC_PORT_GPIO, IOC_IOMODE_NORMAL | IOC_FALLING_EDGE | IOC_INT_ENABLE | IOC_IOPULL_UP | IOC_INPUT_ENABLE | IOC_WAKE_ON_LOW);
-		HWREG(AON_EVENT_BASE + AON_EVENT_O_MCUWUSEL) = AON_EVENT_MCUWUSEL_WU0_EV_PAD;  //Set device to wake MCU from standby on all pins
-		// Does not work with AON_EVENT_MCUWUSEL_WU0_EV_PAD4, the specific pin for button
+	// ---------------
+	// Button = BOARD_IOID_KEY_RIGHT= IOID_4, external interrupt on rising edge and wake up
+	IOCPortConfigureSet(BOARD_IOID_KEY_RIGHT, IOC_PORT_GPIO, IOC_IOMODE_NORMAL | IOC_FALLING_EDGE | IOC_INT_ENABLE | IOC_IOPULL_UP | IOC_INPUT_ENABLE | IOC_WAKE_ON_LOW);
+	HWREG(AON_EVENT_BASE + AON_EVENT_O_MCUWUSEL) = AON_EVENT_MCUWUSEL_WU0_EV_PAD;  //Set device to wake MCU from standby on all pins
+	// Does not work with AON_EVENT_MCUWUSEL_WU0_EV_PAD4, the specific pin for button
 
-		// REED_SWITCH = IOID_25, external interrupt on rising edge and wake up
-		IOCPortConfigureSet(REED_SWITCH, IOC_PORT_GPIO, IOC_IOMODE_NORMAL | IOC_FALLING_EDGE | IOC_INT_ENABLE | IOC_IOPULL_UP | IOC_INPUT_ENABLE | IOC_WAKE_ON_LOW);
-		HWREG(AON_EVENT_BASE + AON_EVENT_O_MCUWUSEL) = AON_EVENT_MCUWUSEL_WU0_EV_PAD;  //Set device to wake MCU from standby from all pins
+	// REED_SWITCH = IOID_25, external interrupt on rising edge and wake up
+	IOCPortConfigureSet(REED_SWITCH, IOC_PORT_GPIO, IOC_IOMODE_NORMAL | IOC_FALLING_EDGE | IOC_INT_ENABLE | IOC_IOPULL_UP | IOC_INPUT_ENABLE | IOC_WAKE_ON_LOW);
+	HWREG(AON_EVENT_BASE + AON_EVENT_O_MCUWUSEL) = AON_EVENT_MCUWUSEL_WU0_EV_PAD;  //Set device to wake MCU from standby from all pins
 
-
-		// BAT_LOW = IOID_28, external interrupt on rising edge and wake up
-		//IOCPortConfigureSet(BAT_LOW, IOC_PORT_GPIO, IOC_IOMODE_NORMAL | IOC_FALLING_EDGE | IOC_INT_ENABLE | IOC_IOPULL_UP | IOC_INPUT_ENABLE | IOC_WAKE_ON_LOW);
-		//HWREG(AON_EVENT_BASE + AON_EVENT_O_MCUWUSEL) = AON_EVENT_MCUWUSEL_WU0_EV_PAD;  //Set device to wake MCU from standby all pins
+	// BAT_LOW = IOID_28, external interrupt on rising edge and wake up
+	//IOCPortConfigureSet(BAT_LOW, IOC_PORT_GPIO, IOC_IOMODE_NORMAL | IOC_FALLING_EDGE | IOC_INT_ENABLE | IOC_IOPULL_UP | IOC_INPUT_ENABLE | IOC_WAKE_ON_LOW);
+	//HWREG(AON_EVENT_BASE + AON_EVENT_O_MCUWUSEL) = AON_EVENT_MCUWUSEL_WU0_EV_PAD;  //Set device to wake MCU from standby all pins
 }
 
 void initSensortag(void){
 
 	// power off
-	AONWUCJtagPowerOff(); //Disable JTAG to allow for Standby
+	AONWUCJtagPowerOff(); 								//Disable JTAG to allow for Standby
 
 	// power on
-	powerEnableAuxForceOn(); // WUC domain
-	powerEnableXtalInterface(); // clk WUC
+	powerEnableAuxForceOn(); 							// WUC domain
+	powerEnableXtalInterface(); 						// clk WUC
 	powerDivideInfClkDS(PRCM_INFRCLKDIVDS_RATIO_DIV32); // Divide INF clk to save Idle mode power (increases interrupt latency)
 
 
@@ -78,8 +78,8 @@ void initSensortag(void){
 	HWREGBITW(PRCM_BASE + PRCM_O_GPIOCLKGR, PRCM_GPIOCLKGR_CLK_EN_BITN) = 0;
 	HWREGBITW(PRCM_BASE + PRCM_O_CLKLOADCTL, PRCM_CLKLOADCTL_LOAD_BITN) = 1; // Load clock settings
 
-	initInterrupts(); // enable generaly
-	initRadio();  // set BLE, 3 Adv. channels
+	initInterrupts(); 									// enable generaly
+	initRadio();  										// set BLE, 3 Adv. channels
 
 	// power off and set Refresh on
 	powerDisableFlashInIdle();  // Turn off FLASH in idle mode == stand by mode
@@ -90,7 +90,9 @@ void initSensortag(void){
 
 
 void getData(void){
+
 	int i = 8;
+
 }
 void setData(void){
 
@@ -109,23 +111,23 @@ void setData(void){
 	payload[p++] = 0x09;
 
 	//Start radio setup and linked advertisment
-	radioUpdateAdvData(10, payload); //Update advertising byte based on IO inputs
+	radioUpdateAdvData(10, payload); 			//Update advertising byte based on IO inputs
 }
 
 void sendData(){
 
-	// Flags for RF-Communication supervision
+	// Flags for RF-communication supervision
 	rfBootDone  = 0;
 	rfSetupDone = 0;
 	rfAdvertisingDone = 0;
 
-	powerEnableRFC(); 		// set power bit
+	powerEnableRFC(); 							// Set power bit
 	waitUntilRFCReady();
-			initRadioInts();  		// define which interrupts are detected (int vector table)
+			initRadioInts();  					// Define which interrupts are detected (int vector table)
 	runRadio();
 
-	waitUntilAUXReady(); //Wait until AUX is ready before configuring oscillators
-	OSCHF_TurnOnXosc();  //Enable 24MHz XTAL (higher clk for sending)
+	waitUntilAUXReady(); 						// AUX is needed to configure higher oscillator
+	OSCHF_TurnOnXosc();  						// Enable 24 MHz XTAL (higher clk for sending)
 	while( ! rfBootDone) {
 		powerDisableCPU();
 		// Request radio to keep on system
@@ -135,61 +137,60 @@ void sendData(){
 	radioPatch(); 								// Patch CM0 - no RFE patch needed for TX only
 	radioCmdStartRAT(); 						// Start radio timer
 	powerEnableFlashInIdle(); 					// Enable Flash access while doing radio setup
-	while( !OSCHF_AttemptToSwitchToXosc()) 		//Switch to XTAL
+	while( !OSCHF_AttemptToSwitchToXosc()) 		// Switch to XTAL, higher clock
 	{}
 
-	// SENDING new DATA
+	// Sending data
 	radioSetupAndTransmit();
 	while( ! rfSetupDone) {
 		powerDisableCPU();
 		PRCMDeepSleep();
 	}
-	powerDisableFlashInIdle(); 					// Disable flash in IDLE after CMD_RADIO_SETUP is done (radio setup reads FCFG trim values)
-	// AdvertisingDone = 3 packets send
+	powerDisableFlashInIdle(); 					// Disable flashafter CMD_RADIO_SETUP is done (radio setup reads FCFG trim values)
+	// AdvertisingDone = 3 packets are send
 	while( ! rfAdvertisingDone) {
 	  powerDisableCPU();
 	  PRCMDeepSleep();
 	}
-	radioCmdBusRequest(false);					//Request radio to not force on system bus any more
+	radioCmdBusRequest(false);					// Request radio to not force on system bus any more
 }
 
 void sleep(){
+
 	// Standby procedure
-		// ----------------------------------------------------
-		powerDisableXtal();
-		powerDisableRFC(); // Turn off radio
-		OSCHfSourceSwitch(); // Switch to RCOSC_HF
-		powerDisableAuxForceOn(); // Allow AUX to turn off again. No longer need oscillator interface
-		powerEnableMcuPdReq(); // Goto Standby. MCU will now request to be powered down on DeepSleep
-		powerDisableCache(); // Disable cache and retention
-		powerDisableCacheRetention();
+	powerDisableXtal();
+	powerDisableRFC();
+	OSCHfSourceSwitch(); 						// lower clk
+	powerDisableAuxForceOn(); 					// Higher oscillator interface no more needed
+	powerEnableMcuPdReq(); 						// Goto Standby. MCU will now request to be powered down on DeepSleep
+	powerDisableCache();
+	powerDisableCacheRetention();
 
-		//Calculate next recharge (Refreshtime)
-		SysCtrlSetRechargeBeforePowerDown(XOSC_IN_HIGH_POWER_MODE);		// BEFORE POWER DOWN
-		SysCtrlAonSync(); // Synchronize transactions to AON domain to ensure AUX has turned off
+	//Calculate next recharge (Refreshtime): must be BEFORE POWER DOWN
+	SysCtrlSetRechargeBeforePowerDown(XOSC_IN_HIGH_POWER_MODE);
+	SysCtrlAonSync(); 							// Synchronize transactions to AON domain to ensure AUX has turned off
 
-		// Enter Standby
-		// --------------------------------------------------
-		powerDisableCPU();
-		PRCMDeepSleep();
-		SysCtrlAonUpdate();
-		SysCtrlAdjustRechargeAfterPowerDown();   // AFTER POWER DOWN: Set refresh cycle
-		SysCtrlAonSync();
+	// Enter Standby
+	powerDisableCPU();
+	PRCMDeepSleep();
+	SysCtrlAonUpdate();
+	SysCtrlAdjustRechargeAfterPowerDown();   	// AFTER POWER DOWN: Set refresh cycle
+	SysCtrlAonSync();
 
 
-		// Wakeup from RTC every 100ms, code starts execution from here
-		// ---------------------------------------------
-		// WAITING FOR INTERRUPT
-		// HERE: OLD CODE. FIX WAKE UP TIME
-		powerEnableRFC();
-		powerEnableAuxForceOn();
+	// Wakeup from RTC every 100ms, code starts execution from here
+	// ---------------------------------------------
+	// WAITING FOR INTERRUPT
+	// HERE: OLD CODE. FIX WAKE UP TIME
+	powerEnableRFC(); // ????????????????????????????????????????????????
+	powerEnableAuxForceOn(); // ??????????????????????' not done in RTC interrupt
 
-		//Re-enable cache and retention
-		powerEnableCache();
-		powerEnableCacheRetention();
+	//Re-enable cache and retention
+	powerEnableCache();
+	powerEnableCacheRetention();
 
-		//MCU will not request to be powered down on DeepSleep -> System goes only to IDLE
-		powerDisableMcuPdReq();
+	//MCU will not request to be powered down on DeepSleep -> System goes only to IDLE
+	powerDisableMcuPdReq();
 }
 
 int main(void) {
