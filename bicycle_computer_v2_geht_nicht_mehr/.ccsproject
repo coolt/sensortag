@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<?ccsproject version="1.0"?>
+<projectOptions>
+	<deviceVariant value="Cortex M.CC2650F128"/>
+	<deviceFamily value="TMS470"/>
+	<deviceEndianness value="little"/>
+	<codegenToolVersion value="5.2.7"/>
+	<isElfFormat value="true"/>
+	<connection value="common/targetdb/connections/TIXDS110_Connection.xml"/>
+	<linkerCommandFile value="cc26x0f128.cmd"/>
+	<rts value="libc.a"/>
+	<createSlaveProjects value=""/>
+	<templateProperties value="id=com.ti.common.project.core.emptyProjectWithMainTemplate,"/>
+	<isTargetManual value="false"/>
+	<origin value="C:/Users/katrin/Documents/Dokumente/ZHAW/5Jahr/ba_bicycle_comp/Firmware_bicycle_computer"/>
+</projectOptions>
