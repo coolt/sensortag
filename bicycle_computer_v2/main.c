@@ -88,7 +88,9 @@ void initSensortag(void){
 	powerDisableAuxRamRet();
 
 }
-
+void getData(void){
+	int i = 8;
+}
 void setData(void){
 
 	//memset(payload, 0, BLE_ADV_PAYLOAD_BUF_LEN); // Clear payload buffer  //DOES NOT WORK !!!!!!!!!!
@@ -202,12 +204,14 @@ void sleep(){
 int main(void) {
 
 	initSensortag();
-	setData();
 
-	// interrupt driven:
 	while(1) {
-		// RTC-Interrupt for wake up from sleep()
-		// Read GPIO and set Data
+		// interrupt driven:
+		// ------------------
+		// Fix timed RTC-interrupt for wake up from sleep()
+		// Read GPIO, set data, send data
+		getData();
+		setData();
 		sendData();
 		sleep();
 	}

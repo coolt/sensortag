@@ -15,3 +15,4 @@
 
 //Advertisment payload length in bytes
 #define ADVLEN 10
+extern uint8_t payload[ADVLEN]; // data buffer
