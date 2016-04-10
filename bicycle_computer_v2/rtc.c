@@ -10,6 +10,18 @@
 #include "cc26xxware_2_22_00_16101/driverLib/sys_ctrl.h"
 
 void initRTC(void) {
+
+  // RTC 0 = Wake up
+  // --------------------
+
+
+
+  // RTC 1 = Speed Measuring
+  //-------------------------
+
+
+
+  // here: old code from Wake up Dario
   //Add RTC Ch2 event as input to AON RTC interrupt
   AONRTCCombinedEventConfig(AON_RTC_CH2);
   //Set RTC ch 2 auto increment

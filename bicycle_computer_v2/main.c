@@ -78,7 +78,8 @@ void initSensortag(void){
 	HWREGBITW(PRCM_BASE + PRCM_O_GPIOCLKGR, PRCM_GPIOCLKGR_CLK_EN_BITN) = 0;
 	HWREGBITW(PRCM_BASE + PRCM_O_CLKLOADCTL, PRCM_CLKLOADCTL_LOAD_BITN) = 1; // Load clock settings
 
-	initInterrupts(); 									// enable generaly
+	initRFInterrupts(); 								// enable generaly
+	CPUcpsie();											// Global interrupt enable
 	initRadio();  										// set BLE, 3 Adv. channels
 
 	// power off and set Refresh on

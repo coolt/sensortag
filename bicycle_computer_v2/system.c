@@ -51,8 +51,9 @@ void sensorsInit(void)
 
 
 // Enable interrupt on CPU
-void initInterrupts(void) {
+void initRFInterrupts(void) {
 
+   // RFCore Interrupts
   // CPE1 - Int channels 31:16: Boot done is bit 30
   HWREG(NVIC_EN0) = 1 << (INT_RF_CPE1 - 16);
   // CPE0 - Int channels  15:0: CMD_DONE is bit 1, LAST_CMD_DONE is bit 0
@@ -60,8 +61,6 @@ void initInterrupts(void) {
   // RTC combined event output
   HWREG(NVIC_EN0) = 1 << (INT_AON_RTC - 16);
 
-  // Global interrupt enable
-  CPUcpsie();
 }
 
 void powerEnableAuxForceOn(void) {

@@ -1,7 +1,7 @@
 
 #include "cc26xxware_2_22_00_16101/inc/hw_types.h"
 
-void initInterrupts(void);
+void initRFInterrupts(void); // refactored
 void sensorsInit(void); // new
 void ledInit(void);  // new
 
