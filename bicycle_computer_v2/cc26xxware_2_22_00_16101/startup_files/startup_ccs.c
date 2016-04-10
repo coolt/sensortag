@@ -34,6 +34,20 @@
 
 #include "../system.h"
 #include "../inc/hw_aon_event.h"
+
+
+
+// RTC Handler
+#include "../inc/hw_ints.h"
+#include "../inc/hw_nvic.h"
+#include "../driverLib/aon_rtc.h"
+#include "../driverLib/sys_ctrl.h"
+
+// GPIO Handler
+
+
+// RFC Handler
+
 //*****************************************************************************
 //
 //! Forward declaration of the reset ISR and the default fault handlers.
@@ -182,6 +196,23 @@ void (* const g_pfnVectors[])(void) =
 //! application.
 //
 //*****************************************************************************
+
+//RTC interrupt handler
+void AONRTCIntHandler(void) {
+
+
+	  // Clear RTC event flag
+	  do{
+		AONRTCEventClear(AON_RTC_CH2);
+	  }
+	  while( AONRTCEventGet(AON_RTC_CH2));
+
+}
+
+
+
+
+
 void
 ResetISR(void)
 {

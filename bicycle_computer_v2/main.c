@@ -23,7 +23,6 @@
 #include "system.h" // Funktionen (Power), Init, Waits
 #include "cc26xxware_2_22_00_16101/inc/hw_aon_event.h"
 
-
 extern volatile bool rfBootDone;
 extern volatile bool rfSetupDone;
 extern volatile bool rfAdvertisingDone;

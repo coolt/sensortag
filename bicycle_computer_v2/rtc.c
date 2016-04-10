@@ -54,20 +54,7 @@ void initRTC_WUms(uint32_t ms){
 }
 
 
-//RTC interrupt handler
-void AONRTCIntHandler(void) {
 
-	// Clear RTC event flag: Code from PA
-	  HWREGBITW(AON_RTC_BASE + AON_RTC_O_EVFLAGS, AON_RTC_EVFLAGS_CH2_BITN) = 1;
-
-	 /* normal Code -------------------------------start
-	  // Clear RTC event flag
-	  do{
-		AONRTCEventClear(AON_RTC_CH2);
-	  }
-	  while( AONRTCEventGet(AON_RTC_CH2));
-	 ----------------------------------------------------end*/
-}
 
 // new function from PA
 uint32_t AONRTCCurrentSubSecValueGet( void )
