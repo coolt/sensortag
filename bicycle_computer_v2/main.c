@@ -1,8 +1,8 @@
 /** V2
  */
 
-#include "cc26xxware_2_22_00_16101/driverLib/ioc.h"  // Grundeinstellungen aktivieren domains
-#include "cc26xxware_2_22_00_16101/driverLib/sys_ctrl.h"  // Bus, CPU, Refresh
+#include "cc26xxware_2_22_00_16101/driverLib/ioc.h"  		// Grundeinstellungen aktivieren domains
+#include "cc26xxware_2_22_00_16101/driverLib/sys_ctrl.h"  	// Bus, CPU, Refresh
 
 #include "sensors/sensor-common.h"
 #include "sensors/ext-flash.h"
@@ -11,15 +11,15 @@
 #include "sensors/hdc-1000-sensor.h"
 #include "sensors/opt-3001-sensor.h"
 
-#include "board.h" 								// Konstanten IO
+#include "board.h" 											// Konstanten IO
 #include "radio.h"
 
-#include "config.h" 							// Konstanten Applikation
-#include "cc26xxware_2_22_00_16101/driverLib/gpio.h" // Konstanten GPIO Pins
+#include "config.h" 										// Konstanten Applikation
+#include "cc26xxware_2_22_00_16101/driverLib/gpio.h" 		// Konstanten GPIO Pins
 #include "interfaces/board-i2c.h"
 #include "rtc.h"
 #include "radio.h"
-#include "system.h" 							// Funktionen (Power), Init, Waits
+#include "system.h" 										// Funktionen (Power), Init, Waits
 #include "cc26xxware_2_22_00_16101/inc/hw_aon_event.h"
 
 extern volatile bool rfBootDone;
@@ -27,44 +27,41 @@ extern volatile bool rfSetupDone;
 extern volatile bool rfAdvertisingDone;
 
 // globale variable
-uint8_t payload[ADVLEN]; 						// data buffer
+uint8_t payload[ADVLEN]; 									// data buffer
 
 
 
 void initSensortag(void){
 
 	// power off
-	AONWUCJtagPowerOff(); 								//Disable JTAG to allow for Standby
+	AONWUCJtagPowerOff(); 									//Disable JTAG to allow for Standby
 
 	// power on
-	powerEnableAuxForceOn(); 							// WUC domain
-	powerEnableXtalInterface(); 						// clk WUC
-	powerDivideInfClkDS(PRCM_INFRCLKDIVDS_RATIO_DIV32); // Divide INF clk to save Idle mode power (increases interrupt latency)
-
+	powerEnableAuxForceOn(); 								// WUC domain
+	powerEnableXtalInterface(); 							// clk WUC
+	powerDivideInfClkDS(PRCM_INFRCLKDIVDS_RATIO_DIV32); 	// Divide INF clk to save Idle mode power (increases interrupt latency)
 
 	// power on
 	powerEnablePeriph();
 	powerEnableGPIOClockRunMode();
 	while((PRCMPowerDomainStatus(PRCM_DOMAIN_PERIPH) != PRCM_DOMAIN_POWER_ON)); /* Wait for domains to power on */
 
-	// Change
+	// To Change
 	//initRTC(); // for time-calculation,  !! PA Code: automtisches Aufwachen nach 10 s, dann berechnen
 
 	sensorsInit();
+	initRadio();
 
 	initGPIOInterrupts();
-
 	IntEnable(INT_EDGE_DETECT);
-	// -----------------------------------------------------------
 
 	// power off
 	powerDisablePeriph(); //Disable clock for GPIO in CPU run mode
 	HWREGBITW(PRCM_BASE + PRCM_O_GPIOCLKGR, PRCM_GPIOCLKGR_CLK_EN_BITN) = 0;
 	HWREGBITW(PRCM_BASE + PRCM_O_CLKLOADCTL, PRCM_CLKLOADCTL_LOAD_BITN) = 1; // Load clock settings
 
-	initRFInterrupts(); 								// enable generaly
-	CPUcpsie();											// Global interrupt enable
-	initRadio();  										// set BLE, 3 Adv. channels
+	initRFInterrupts(); 								// Set RFInterrupts to NVIC
+	CPUcpsie();											// All extern interrupts enable (globaly)
 
 	// power off and set Refresh on
 	powerDisableFlashInIdle();  // Turn off FLASH in idle mode == stand by mode
