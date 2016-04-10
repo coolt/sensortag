@@ -28,59 +28,60 @@ extern volatile bool rfSetupDone;
 extern volatile bool rfAdvertisingDone;
 
 void initSensortag(void){
+
 	// power off
-		AONWUCJtagPowerOff(); //Disable JTAG to allow for Standby
+	AONWUCJtagPowerOff(); //Disable JTAG to allow for Standby
 
-		// power on
-		powerEnableAuxForceOn();
-		powerEnableRFC();
-		powerEnableXtalInterface();
+	// power on
+	powerEnableAuxForceOn(); // WUC domain
 
-		// reduce clk
-		powerDivideInfClkDS(PRCM_INFRCLKDIVDS_RATIO_DIV32); // Divide INF clk to save Idle mode power (increases interrupt latency)
+	powerEnableXtalInterface();
 
-		// Change
-		//initRTC(); // for time-calculation,  !! PA Code: automtisches Aufwachen nach 10 s, dann berechnen
+	// reduce clk
+	powerDivideInfClkDS(PRCM_INFRCLKDIVDS_RATIO_DIV32); // Divide INF clk to save Idle mode power (increases interrupt latency)
 
-		// power on
-		powerEnablePeriph();
-		powerEnableGPIOClockRunMode();
-		while((PRCMPowerDomainStatus(PRCM_DOMAIN_PERIPH) != PRCM_DOMAIN_POWER_ON)); /* Wait for domains to power on */
+	// Change
+	//initRTC(); // for time-calculation,  !! PA Code: automtisches Aufwachen nach 10 s, dann berechnen
 
-		sensorsInit();
+	// power on
+	powerEnablePeriph();
+	powerEnableGPIOClockRunMode();
+	while((PRCMPowerDomainStatus(PRCM_DOMAIN_PERIPH) != PRCM_DOMAIN_POWER_ON)); /* Wait for domains to power on */
 
-		// Set Interrupts
-		// ---------------
-		// Button = BOARD_IOID_KEY_RIGHT= IOID_4, external interrupt on rising edge and wake up
-		IOCPortConfigureSet(BOARD_IOID_KEY_RIGHT, IOC_PORT_GPIO, IOC_IOMODE_NORMAL | IOC_FALLING_EDGE | IOC_INT_ENABLE | IOC_IOPULL_UP | IOC_INPUT_ENABLE | IOC_WAKE_ON_LOW);
-		HWREG(AON_EVENT_BASE + AON_EVENT_O_MCUWUSEL) = AON_EVENT_MCUWUSEL_WU0_EV_PAD;  //Set device to wake MCU from standby on all pins
-		// Does not work with AON_EVENT_MCUWUSEL_WU0_EV_PAD4, the specific pin for button
+	sensorsInit();
 
-		// REED_SWITCH = IOID_25, external interrupt on rising edge and wake up
-		IOCPortConfigureSet(REED_SWITCH, IOC_PORT_GPIO, IOC_IOMODE_NORMAL | IOC_FALLING_EDGE | IOC_INT_ENABLE | IOC_IOPULL_UP | IOC_INPUT_ENABLE | IOC_WAKE_ON_LOW);
-		HWREG(AON_EVENT_BASE + AON_EVENT_O_MCUWUSEL) = AON_EVENT_MCUWUSEL_WU0_EV_PAD;  //Set device to wake MCU from standby from all pins
+	// Set Interrupts
+	// ---------------
+	// Button = BOARD_IOID_KEY_RIGHT= IOID_4, external interrupt on rising edge and wake up
+	IOCPortConfigureSet(BOARD_IOID_KEY_RIGHT, IOC_PORT_GPIO, IOC_IOMODE_NORMAL | IOC_FALLING_EDGE | IOC_INT_ENABLE | IOC_IOPULL_UP | IOC_INPUT_ENABLE | IOC_WAKE_ON_LOW);
+	HWREG(AON_EVENT_BASE + AON_EVENT_O_MCUWUSEL) = AON_EVENT_MCUWUSEL_WU0_EV_PAD;  //Set device to wake MCU from standby on all pins
+	// Does not work with AON_EVENT_MCUWUSEL_WU0_EV_PAD4, the specific pin for button
+
+	// REED_SWITCH = IOID_25, external interrupt on rising edge and wake up
+	IOCPortConfigureSet(REED_SWITCH, IOC_PORT_GPIO, IOC_IOMODE_NORMAL | IOC_FALLING_EDGE | IOC_INT_ENABLE | IOC_IOPULL_UP | IOC_INPUT_ENABLE | IOC_WAKE_ON_LOW);
+	HWREG(AON_EVENT_BASE + AON_EVENT_O_MCUWUSEL) = AON_EVENT_MCUWUSEL_WU0_EV_PAD;  //Set device to wake MCU from standby from all pins
 
 
-		// BAT_LOW = IOID_28, external interrupt on rising edge and wake up
-		//IOCPortConfigureSet(BAT_LOW, IOC_PORT_GPIO, IOC_IOMODE_NORMAL | IOC_FALLING_EDGE | IOC_INT_ENABLE | IOC_IOPULL_UP | IOC_INPUT_ENABLE | IOC_WAKE_ON_LOW);
-		//HWREG(AON_EVENT_BASE + AON_EVENT_O_MCUWUSEL) = AON_EVENT_MCUWUSEL_WU0_EV_PAD;  //Set device to wake MCU from standby all pins
+	// BAT_LOW = IOID_28, external interrupt on rising edge and wake up
+	//IOCPortConfigureSet(BAT_LOW, IOC_PORT_GPIO, IOC_IOMODE_NORMAL | IOC_FALLING_EDGE | IOC_INT_ENABLE | IOC_IOPULL_UP | IOC_INPUT_ENABLE | IOC_WAKE_ON_LOW);
+	//HWREG(AON_EVENT_BASE + AON_EVENT_O_MCUWUSEL) = AON_EVENT_MCUWUSEL_WU0_EV_PAD;  //Set device to wake MCU from standby all pins
 
-		IntEnable(INT_EDGE_DETECT);
-		// -----------------------------------------------------------
+	IntEnable(INT_EDGE_DETECT);
+	// -----------------------------------------------------------
 
-		// power off
-		powerDisablePeriph(); //Disable clock for GPIO in CPU run mode
-		HWREGBITW(PRCM_BASE + PRCM_O_GPIOCLKGR, PRCM_GPIOCLKGR_CLK_EN_BITN) = 0;
-		HWREGBITW(PRCM_BASE + PRCM_O_CLKLOADCTL, PRCM_CLKLOADCTL_LOAD_BITN) = 1; // Load clock settings
+	// power off
+	powerDisablePeriph(); //Disable clock for GPIO in CPU run mode
+	HWREGBITW(PRCM_BASE + PRCM_O_GPIOCLKGR, PRCM_GPIOCLKGR_CLK_EN_BITN) = 0;
+	HWREGBITW(PRCM_BASE + PRCM_O_CLKLOADCTL, PRCM_CLKLOADCTL_LOAD_BITN) = 1; // Load clock settings
 
-		initInterrupts(); // enable generaly
-		initRadio();  // set BLE, 3 Adv. channels
+	initInterrupts(); // enable generaly
+	initRadio();  // set BLE, 3 Adv. channels
 
-		// power off and set Refresh on
-		powerDisableFlashInIdle();  // Turn off FLASH in idle mode == stand by mode
-		powerEnableCacheRetention(); // Cache retention must be enabled in Idle if flash domain is turned off (to avoid cache corruption)
-		powerEnableAUXPdReq(); //AUX - request to power down (takes no effect since force on is set)
-		powerDisableAuxRamRet();
+	// power off and set Refresh on
+	powerDisableFlashInIdle();  // Turn off FLASH in idle mode == stand by mode
+	powerEnableCacheRetention(); // Cache retention must be enabled in Idle if flash domain is turned off (to avoid cache corruption)
+	powerEnableAUXPdReq(); //AUX - request to power down (takes no effect since force on is set)
+	powerDisableAuxRamRet();
 
 }
 
@@ -110,6 +111,9 @@ void setData(void){
 }
 
 void sendData(){
+
+	powerEnableRFC(); // set power bit
+
 	rfBootDone  = 0;
 			rfSetupDone = 0;
 			rfAdvertisingDone = 0;
@@ -204,15 +208,15 @@ int main(void) {
 			//Fill payload buffer with adv parameter data
 			uint8_t p;
 			p = 0;
-			payload[p++] = 0x01;          /* 2 bytes */
 			payload[p++] = 0x01;
-			payload[p++] = 0x03;          /* LE Limited Discoverable Mode" & "BR/EDR Not Supported */
-			payload[p++] = 0x04; //1 + strlen(beacond_config.adv_name);
-			payload[p++] = 0x03;//BLE_ADV_TYPE_NAME;
-			payload[p++] = 0x00;//BLE_ADV_TYPE_NAME;
-			payload[p++] = 0xDE;//BLE_ADV_TYPE_NAME;
-			payload[p++] = 0x01;//BLE_ADV_TYPE_NAME;
-			payload[p++] = 0x35;//BLE_ADV_TYPE_NAME;
+			payload[p++] = 0x02;
+			payload[p++] = 0x03;
+			payload[p++] = 0x04;
+			payload[p++] = 0x05;
+			payload[p++] = 0x06;
+			payload[p++] = 0x07;
+			payload[p++] = 0x08;
+			payload[p++] = 0x09;
 
 
 			//Start radio setup and linked advertisment
