@@ -30,7 +30,6 @@ extern volatile bool rfAdvertisingDone;
 uint8_t payload[ADVLEN]; 									// data buffer
 
 
-
 void initSensortag(void){
 
 	// power off
@@ -40,33 +39,36 @@ void initSensortag(void){
 	powerEnableAuxForceOn(); 								// WUC domain
 	powerEnableXtalInterface(); 							// clk WUC
 	powerDivideInfClkDS(PRCM_INFRCLKDIVDS_RATIO_DIV32); 	// Divide INF clk to save Idle mode power (increases interrupt latency)
-
-	// power on
 	powerEnablePeriph();
 	powerEnableGPIOClockRunMode();
 	while((PRCMPowerDomainStatus(PRCM_DOMAIN_PERIPH) != PRCM_DOMAIN_POWER_ON)); /* Wait for domains to power on */
 
-	// To Change
+	// Configuartions
+	sensorsInit();											// Enable needed Sensors
+	initRadio();											// Set Communicationmode = BLE, Channels = 3, Advertising modus
+
+	// Interrupts
 	//initRTC(); // for time-calculation,  !! PA Code: automtisches Aufwachen nach 10 s, dann berechnen
+	initGPIOInterrupts();									// Define IOPorts for Interrupt, Add GPIO-mask to WU-Event
+	IntEnable(INT_EDGE_DETECT);								// Enable specific interrupt. Int_EDGE_DETECT = Nr. 16  (=> all GPIO-interrupts   ?? )
 
-	sensorsInit();
-	initRadio();
-
-	initGPIOInterrupts();
-	IntEnable(INT_EDGE_DETECT);
-
-	// power off
+/*	// power off  -> moved after initRFInterrupts and Int enable
 	powerDisablePeriph(); //Disable clock for GPIO in CPU run mode
 	HWREGBITW(PRCM_BASE + PRCM_O_GPIOCLKGR, PRCM_GPIOCLKGR_CLK_EN_BITN) = 0;
 	HWREGBITW(PRCM_BASE + PRCM_O_CLKLOADCTL, PRCM_CLKLOADCTL_LOAD_BITN) = 1; // Load clock settings
-
-	initRFInterrupts(); 								// Set RFInterrupts to NVIC
-	CPUcpsie();											// All extern interrupts enable (globaly)
+*/
+	initRFInterrupts(); 									// Set RFInterrupts to NVIC
+	CPUcpsie();												// All extern interrupts enable (globaly)
 
 	// power off and set Refresh on
-	powerDisableFlashInIdle();  // Turn off FLASH in idle mode == stand by mode
-	powerEnableCacheRetention(); // Cache retention must be enabled in Idle if flash domain is turned off (to avoid cache corruption)
-	powerEnableAUXPdReq(); //AUX - request to power down (takes no effect since force on is set)
+	// -- moved functions from in the middle of interrupt settings
+	powerDisablePeriph(); //Disable clock for GPIO in CPU run mode
+	HWREGBITW(PRCM_BASE + PRCM_O_GPIOCLKGR, PRCM_GPIOCLKGR_CLK_EN_BITN) = 0;
+	HWREGBITW(PRCM_BASE + PRCM_O_CLKLOADCTL, PRCM_CLKLOADCTL_LOAD_BITN) = 1; // Load clock settings
+	// -- old functions
+	powerDisableFlashInIdle();  							// Turn off FLASH in idle mode == stand by mode
+	powerEnableCacheRetention(); 							// Cache retention must be enabled in Idle if flash domain is turned off (to avoid cache corruption)
+	powerEnableAUXPdReq(); 									//AUX - request to power down (takes no effect since force on is set)
 	powerDisableAuxRamRet();
 }
 
@@ -182,7 +184,7 @@ int main(void) {
 	while(1) {
 		// interrupt driven:
 		// ------------------
-		// Fix timed RTC-interrupt for wake up from sleep()
+		// Fix-timed RTC-interrupt for wake up from sleep()
 		// Read GPIO, set data, send data
 		getData();
 		setData();
