@@ -197,31 +197,34 @@ void sendData(){
 }
 
 int main(void) {
+
 	initSensortag();
-	// setData();
+
+	// Set Data
+	//-----------------
+	// setData(); // not possible: because of buffer errors
 	uint8_t payload[ADVLEN]; // data buffer
+	memset(payload, 0, BLE_ADV_PAYLOAD_BUF_LEN); // Clear payload buffer
+	//Fill payload buffer with adv parameter data
+	uint8_t p = 0;
+	payload[p++] = 0x01;
+	payload[p++] = 0x02;
+	payload[p++] = 0x03;
+	payload[p++] = 0x04;
+	payload[p++] = 0x05;
+	payload[p++] = 0x06;
+	payload[p++] = 0x07;
+	payload[p++] = 0x08;
+	payload[p++] = 0x09;
 
-			// prepate data buffer
-			// --------------------
-			// Clear payload buffer
-		    memset(payload, 0, BLE_ADV_PAYLOAD_BUF_LEN);
-			//Fill payload buffer with adv parameter data
-			uint8_t p;
-			p = 0;
-			payload[p++] = 0x01;
-			payload[p++] = 0x02;
-			payload[p++] = 0x03;
-			payload[p++] = 0x04;
-			payload[p++] = 0x05;
-			payload[p++] = 0x06;
-			payload[p++] = 0x07;
-			payload[p++] = 0x08;
-			payload[p++] = 0x09;
+	//Start radio setup and linked advertisment
+	radioUpdateAdvData(10, payload); //Update advertising byte based on IO inputs
 
+	// interrupt driven:
 
-			//Start radio setup and linked advertisment
-			radioUpdateAdvData(10, payload); //Update advertising byte based on IO inputs
-	while(1) {  // endlose loop: system is in standby mode, waiting for interrupt on GPIO
+	while(1) {
+		// RTC-Interrupt for wake up from sleep()
+		// Read GPIO and set Data
 		sendData();
 	}
 }
