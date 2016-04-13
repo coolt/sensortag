@@ -36,12 +36,14 @@ void initRTCInterrupts(void) {
 	// here: old code from Wake up Dario
 	//Add RTC Ch2 event as input to AON RTC interrupt
 	AONRTCCombinedEventConfig(AON_RTC_CH2);
+
 			//Set RTC ch 2 auto increment
 			//AONRTCIncValueCh2Set(WAKE_INTERVAL_TICKS);
 			//Set RTC ch2 initial compare value
 			//AONRTCCompareValueSet(AON_RTC_CH2, WAKE_INTERVAL_TICKS);
 			//Set RTC CH 2 to auto increment mode
 			//AONRTCModeCh2Set(AON_RTC_MODE_CH2_CONTINUOUS);
+
 	//Enable channel 2
 	AONRTCChannelEnable(AON_RTC_CH2);
 	//Set device to wake MCU from standby on RTC channel 2
