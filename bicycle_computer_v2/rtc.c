@@ -9,35 +9,7 @@
 #include "cc26xxware_2_22_00_16101/driverLib/aon_rtc.h"
 #include "cc26xxware_2_22_00_16101/driverLib/sys_ctrl.h"
 
-void initRTC(void) {
 
-  // RTC 0 = Wake up
-  // --------------------
-
-
-
-  // RTC 1 = Speed Measuring
-  //-------------------------
-
-
-
-  // here: old code from Wake up Dario
-  //Add RTC Ch2 event as input to AON RTC interrupt
-  AONRTCCombinedEventConfig(AON_RTC_CH2);
-  //Set RTC ch 2 auto increment
-  AONRTCIncValueCh2Set(WAKE_INTERVAL_TICKS);
-  //Set RTC ch2 initial compare value
-  AONRTCCompareValueSet(AON_RTC_CH2, WAKE_INTERVAL_TICKS);
-  //Set RTC CH 2 to auto increment mode
-  AONRTCModeCh2Set(AON_RTC_MODE_CH2_CONTINUOUS);
-  //Enable channel 2
-  AONRTCChannelEnable(AON_RTC_CH2);
-  //Set device to wake MCU from standby on RTC channel 2
-  HWREG(AON_EVENT_BASE + AON_EVENT_O_MCUWUSEL) = AON_EVENT_MCUWUSEL_WU0_EV_RTC_CH2;
-
-  //Enable RTC
-  AONRTCEnable();
-}
 
 /**  // new function from PA
  * \brief		This function is for using the RTC just for a short time

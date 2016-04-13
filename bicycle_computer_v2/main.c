@@ -49,6 +49,7 @@ void initSensortag(void){
 
 	// Interrupts
 	//initRTC(); // for time-calculation,  !! PA Code: automtisches Aufwachen nach 10 s, dann berechnen
+	initRTCInterrupts();
 	initGPIOInterrupts();									// Define IOPorts for Interrupt, Add GPIO-mask to WU-Event
 	IntEnable(INT_EDGE_DETECT);								// Enable specific interrupt. Int_EDGE_DETECT = Nr. 16  (=> all GPIO-interrupts   ?? )
 

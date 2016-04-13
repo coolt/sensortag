@@ -1,10 +1,16 @@
 
 #include "cc26xxware_2_22_00_16101/inc/hw_types.h"
-void initGPIOInterrupts(void); // new baek, from main
-void initRFInterrupts(void); // refactored
+
+// system configuration
 void sensorsInit(void); // new
 void ledInit(void);  // new
 
+// interrupt configuration
+void initRTCInterrupts(void);
+void initGPIOInterrupts(void); // new baek, from main
+void initRFInterrupts(void); // refactored
+
+// power domain set up
 void powerEnableAuxForceOn(void);
 void powerDisableAuxForceOn(void);
 
