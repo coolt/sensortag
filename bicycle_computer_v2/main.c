@@ -1,9 +1,14 @@
 /** V2
  */
 
+// Set up
+#include "config.h" 										// Konstanten Applikation
+#include "system.h" 										// Funktionen (Power), Init, Waits
 #include "cc26xxware_2_22_00_16101/driverLib/ioc.h"  		// Grundeinstellungen aktivieren domains
 #include "cc26xxware_2_22_00_16101/driverLib/sys_ctrl.h"  	// Bus, CPU, Refresh
+#include "interfaces/board-i2c.h"
 
+// Sensors
 #include "sensors/sensor-common.h"
 #include "sensors/ext-flash.h"
 #include "sensors/bmp-280-sensor.h"
@@ -11,22 +16,22 @@
 #include "sensors/hdc-1000-sensor.h"
 #include "sensors/opt-3001-sensor.h"
 
+// GPIO
 #include "board.h" 											// Konstanten IO
-#include "radio.h"
-
-#include "config.h" 										// Konstanten Applikation
 #include "cc26xxware_2_22_00_16101/driverLib/gpio.h" 		// Konstanten GPIO Pins
-#include "interfaces/board-i2c.h"
+
+// RTC
 #include "rtc.h"
-#include "radio.h"
-#include "system.h" 										// Funktionen (Power), Init, Waits
+#include "cc26xxware_2_22_00_16101/driverLib/aon_rtc.h"	   // PA: Enable, disable RTC interrupt
 #include "cc26xxware_2_22_00_16101/inc/hw_aon_event.h"
 
-extern volatile bool rfBootDone;
-extern volatile bool rfSetupDone;
-extern volatile bool rfAdvertisingDone;
+// RFChip
+#include "radio.h"
 
-// globale variable
+// globale variables: declared in config.h, used in radio.c and startup_ccs
+volatile bool rfBootDone;
+volatile bool rfSetupDone;
+volatile bool rfAdvertisingDone;
 uint8_t payload[ADVLEN]; 									// data buffer
 
 
@@ -47,20 +52,17 @@ void initSensortag(void){
 	sensorsInit();											// Enable needed Sensors
 	initRadio();											// Set Communicationmode = BLE, Channels = 3, Advertising modus
 
-	// Interrupts
+	// Configure Interrupts
 	//initRTC(); // for time-calculation,  !! PA Code: automtisches Aufwachen nach 10 s, dann berechnen
 	initRTCInterrupts();
 	initGPIOInterrupts();									// Define IOPorts for Interrupt, Add GPIO-mask to WU-Event
-	IntEnable(INT_EDGE_DETECT);								// Enable specific interrupt. Int_EDGE_DETECT = Nr. 16  (=> all GPIO-interrupts   ?? )
-
-/*	// power off  -> moved after initRFInterrupts and Int enable
-	powerDisablePeriph(); //Disable clock for GPIO in CPU run mode
-	HWREGBITW(PRCM_BASE + PRCM_O_GPIOCLKGR, PRCM_GPIOCLKGR_CLK_EN_BITN) = 0;
-	HWREGBITW(PRCM_BASE + PRCM_O_CLKLOADCTL, PRCM_CLKLOADCTL_LOAD_BITN) = 1; // Load clock settings
-*/
 	initRFInterrupts(); 									// Set RFInterrupts to NVIC
 	CPUcpsie();												// All extern interrupts enable (globaly)
 
+	// Setup for next state
+	IntDisable(INT_EDGE_DETECT);							// Enable specific interrupt. Int_EDGE_DETECT = Nr. 16  (=> all GPIO-interrupts   ?? )
+	AONRTCEnable();											// PA: Enable RTC
+/*
 	// power off and set Refresh on
 	// -- moved functions from in the middle of interrupt settings
 	powerDisablePeriph(); //Disable clock for GPIO in CPU run mode
@@ -71,6 +73,7 @@ void initSensortag(void){
 	powerEnableCacheRetention(); 							// Cache retention must be enabled in Idle if flash domain is turned off (to avoid cache corruption)
 	powerEnableAUXPdReq(); 									//AUX - request to power down (takes no effect since force on is set)
 	powerDisableAuxRamRet();
+	*/
 }
 
 
@@ -138,6 +141,7 @@ void sendData(){
 	  PRCMDeepSleep();
 	}
 	radioCmdBusRequest(false);					// Request radio to not force on system bus any more
+	AONRTCEnable();
 }
 
 void sleep(){
@@ -180,7 +184,7 @@ void sleep(){
 
 int main(void) {
 
-	initSensortag();
+	initSensortag(); // end: enable AONRTC(); No powerOff
 
 	while(1) {
 		// interrupt driven:
@@ -190,6 +194,6 @@ int main(void) {
 		getData();
 		setData();
 		sendData();
-		sleep();
+		// sleep();
 	}
 }

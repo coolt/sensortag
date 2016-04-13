@@ -15,10 +15,6 @@
 #include "radio.h"
 #include "system.h"
 
-volatile bool rfBootDone          = 0;
-volatile bool rfSetupDone         = 0;
-volatile bool rfAdvertisingDone   = 0;
-
 // Advertisment data. Must be global for other files to access it.
 #pragma data_alignment=4
 char advData[ADVLEN] = {0};
@@ -184,45 +180,4 @@ void initRadioInts(void) {
                      RFC_DBELL_RFCPEIEN_LAST_COMMAND_DONE_M;
 
   HWREG(RFC_DBELL_BASE + RFC_DBELL_O_RFCPEIEN) = intVecs;
-}
-
-//Radio CPE ch 1 interrupt - used for BOOT_DONE ISR (by default on CH1)
-void RFCCPE1IntHandler(void) {
-  //Clear all RF Core ISR flags and wair until done
-  do {
-    HWREG(RFC_DBELL_BASE + RFC_DBELL_O_RFCPEIFG) = ~RFC_DBELL_RFCPEIFG_BOOT_DONE_M;
-  }
-  while(HWREG(RFC_DBELL_BASE + RFC_DBELL_O_RFCPEIFG)  & RFC_DBELL_RFCPEIFG_BOOT_DONE_M);
-
-  rfBootDone = 1;
-}
-
-
-//Radio CPE ch 0 interrupt. Used for CMD_DONE and LAST_CMD_DONE (by default on CH0)
-//
-void RFCCPE0IntHandler(void) {
-
-  uint32_t interrupts = HWREG(RFC_DBELL_BASE + RFC_DBELL_O_RFCPEIFG);
-
-  if(interrupts & RFC_DBELL_RFCPEIFG_COMMAND_DONE_M) {
-    rfSetupDone = 1;
-    HWREG(RFC_DBELL_BASE + RFC_DBELL_O_RFCPEIEN) &= ~RFC_DBELL_RFCPEIEN_COMMAND_DONE_M;
-
-    do {
-      HWREG(RFC_DBELL_BASE + RFC_DBELL_O_RFCPEIFG) = ~RFC_DBELL_RFCPEIFG_COMMAND_DONE_M;
-    }
-    while(HWREG(RFC_DBELL_BASE + RFC_DBELL_O_RFCPEIFG) & RFC_DBELL_RFCPEIFG_COMMAND_DONE_M);
-    }
-
-  if(interrupts & RFC_DBELL_RFCPEIFG_LAST_COMMAND_DONE_M) {
-    rfAdvertisingDone = 1;
-    HWREG(RFC_DBELL_BASE + RFC_DBELL_O_RFCPEIEN) &= ~RFC_DBELL_RFCPEIEN_LAST_COMMAND_DONE_M;
-
-    do {
-      HWREG(RFC_DBELL_BASE + RFC_DBELL_O_RFCPEIFG) = ~RFC_DBELL_RFCPEIFG_LAST_COMMAND_DONE_M;
-    }
-    while(HWREG(RFC_DBELL_BASE + RFC_DBELL_O_RFCPEIFG) & RFC_DBELL_RFCPEIFG_LAST_COMMAND_DONE_M);
-    }
-
-
 }
