@@ -38,13 +38,11 @@ void initRTCInterrupts(void) {
 	AONRTCCombinedEventConfig(AON_RTC_CH2);
 
 			//Set RTC ch 2 auto increment
-			AONRTCIncValueCh2Set(0); // start value
+			//AONRTCIncValueCh2Set(WAKE_INTERVAL_TICKS);
 			//Set RTC ch2 initial compare value
-			int time = 0x0500; // = 5 s
-			AONRTCCompareValueSet(AON_RTC_CH2, time); //  = max 65'000 = 0xFFFE = 256 s
-			int temp = WAKE_INTERVAL_TICKS;
+			//AONRTCCompareValueSet(AON_RTC_CH2, WAKE_INTERVAL_TICKS);
 			//Set RTC CH 2 to auto increment mode
-			AONRTCModeCh2Set(AON_RTC_MODE_CH2_CONTINUOUS);
+			//AONRTCModeCh2Set(AON_RTC_MODE_CH2_CONTINUOUS);
 
 	//Enable channel 2
 	AONRTCChannelEnable(AON_RTC_CH2);

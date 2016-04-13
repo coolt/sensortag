@@ -27,12 +27,15 @@
 #include "../driverLib/sys_ctrl.h"
 #include "../../board.h"
 
+
 #include "../../config.h"
 #include "../driverLib/gpio.h"
 #include "../interfaces/board-i2c.h"
 
 #include "../system.h"
 #include "../inc/hw_aon_event.h"
+
+
 
 // RTC Handler
 #include "../inc/hw_ints.h"
@@ -44,26 +47,6 @@
 
 
 // RFC Handler
-#include "../inc/hw_rfc_dbell.h"
-#include "../inc/hw_rfc_pwr.h"
-#include "../inc/hw_fcfg1.h"
-#include "../radio_files/rfc_api/common_cmd.h"
-#include "../radio_files/rfc_api/ble_cmd.h"
-#include "../radio_files/rfc_api/mailbox.h"
-#include "../radio_files/patches/ble/apply_patch.h"
-#include "../radio_files/overrides/ble_overrides.h"
-#include "../driverLib/prcm.h"
-#include "../../radio.h"
-#include "../../system.h"
-#include "../../config.h"  // set global variables
-
-
-// globale variables: declared in main. used here and in radio.c
-volatile bool rfBootDone;
-volatile bool rfSetupDone;
-volatile bool rfAdvertisingDone;
-
-
 
 //*****************************************************************************
 //
@@ -214,68 +197,18 @@ void (* const g_pfnVectors[])(void) =
 //
 //*****************************************************************************
 
-
-
-
-
-
-
 //RTC interrupt handler
 void AONRTCIntHandler(void) {
 
 
 	  // Clear RTC event flag
 	  do{
-		  int b = 3;
-		//AONRTCEventClear(AON_RTC_CH2);
-		  HWREGBITW(AON_RTC_BASE + AON_RTC_O_EVFLAGS, AON_RTC_EVFLAGS_CH2_BITN) = 1;
-		int i = 5;
-		AONRTCEnable();		// aktivieren für nächstes Mal
+		AONRTCEventClear(AON_RTC_CH2);
 	  }
 	  while( AONRTCEventGet(AON_RTC_CH2));
-}
-
-
-//Radio CPE ch 1 interrupt - used for BOOT_DONE ISR (by default on CH1)
-void RFCCPE1IntHandler(void) {
-  //Clear all RF Core ISR flags and wair until done
-  do {
-    HWREG(RFC_DBELL_BASE + RFC_DBELL_O_RFCPEIFG) = ~RFC_DBELL_RFCPEIFG_BOOT_DONE_M;
-  }
-  while(HWREG(RFC_DBELL_BASE + RFC_DBELL_O_RFCPEIFG)  & RFC_DBELL_RFCPEIFG_BOOT_DONE_M);
-
-  rfBootDone = 1;
-}
-
-
-//Radio CPE ch 0 interrupt. Used for CMD_DONE and LAST_CMD_DONE (by default on CH0)
-//
-void RFCCPE0IntHandler(void) {
-
-  uint32_t interrupts = HWREG(RFC_DBELL_BASE + RFC_DBELL_O_RFCPEIFG);
-
-  if(interrupts & RFC_DBELL_RFCPEIFG_COMMAND_DONE_M) {
-    rfSetupDone = 1;
-    HWREG(RFC_DBELL_BASE + RFC_DBELL_O_RFCPEIEN) &= ~RFC_DBELL_RFCPEIEN_COMMAND_DONE_M;
-
-    do {
-      HWREG(RFC_DBELL_BASE + RFC_DBELL_O_RFCPEIFG) = ~RFC_DBELL_RFCPEIFG_COMMAND_DONE_M;
-    }
-    while(HWREG(RFC_DBELL_BASE + RFC_DBELL_O_RFCPEIFG) & RFC_DBELL_RFCPEIFG_COMMAND_DONE_M);
-    }
-
-  if(interrupts & RFC_DBELL_RFCPEIFG_LAST_COMMAND_DONE_M) {
-    rfAdvertisingDone = 1;
-    HWREG(RFC_DBELL_BASE + RFC_DBELL_O_RFCPEIEN) &= ~RFC_DBELL_RFCPEIEN_LAST_COMMAND_DONE_M;
-
-    do {
-      HWREG(RFC_DBELL_BASE + RFC_DBELL_O_RFCPEIFG) = ~RFC_DBELL_RFCPEIFG_LAST_COMMAND_DONE_M;
-    }
-    while(HWREG(RFC_DBELL_BASE + RFC_DBELL_O_RFCPEIFG) & RFC_DBELL_RFCPEIFG_LAST_COMMAND_DONE_M);
-    }
-
 
 }
+
 
 
 
