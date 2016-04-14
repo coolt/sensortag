@@ -113,6 +113,7 @@ void sendData(){
 
 	waitUntilAUXReady(); 						// AUX is needed to configure higher oscillator
 	OSCHF_TurnOnXosc();  						// Enable 24 MHz XTAL (higher clk for sending)
+	int debug = rfBootDone;
 	while( ! rfBootDone) {
 		powerDisableCPU();
 		// Request radio to keep on system
