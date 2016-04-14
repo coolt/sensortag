@@ -27,6 +27,7 @@
 
 // RFChip
 #include "radio.h"
+#include "cc26xxware_2_22_00_16101/driverLib/rfc.h"			// Set up RFC interrupts
 
 // globale variables: declared in config.h, used in radio.c and startup_ccs
 volatile bool rfBootDone;
@@ -34,7 +35,17 @@ volatile bool rfSetupDone;
 volatile bool rfAdvertisingDone;
 uint8_t payload[ADVLEN]; 									// data buffer
 
+void initRFOnlyForDebugging(void){
 
+	powerEnableAuxForceOn(); 								// WUC domain
+	powerEnableXtalInterface(); 							// clk WUC
+	powerDivideInfClkDS(PRCM_INFRCLKDIVDS_RATIO_DIV32); 	// Divide INF clk to save Idle mode power (increases interrupt latency)
+
+	initRadio();
+	initRFInterrupts(); 									// Set RFInterrupts to NVIC
+	// CPUcpsie();												// All extern interrupts enable (globaly)
+
+}
 void initSensortag(void){
 
 	// power off
@@ -53,8 +64,7 @@ void initSensortag(void){
 	initRadio();											// Set Communicationmode = BLE, Channels = 3, Advertising modus
 
 	// Configure Interrupts
-	//initRTC(); // for time-calculation,  !! PA Code: automtisches Aufwachen nach 10 s, dann berechnen
-	initRTCInterrupts();
+	//initRTCInterrupts();									// CH0: WakeUp, CH2: Speed calculation
 	initGPIOInterrupts();									// Define IOPorts for Interrupt, Add GPIO-mask to WU-Event
 	initRFInterrupts(); 									// Set RFInterrupts to NVIC
 	CPUcpsie();												// All extern interrupts enable (globaly)
@@ -62,7 +72,8 @@ void initSensortag(void){
 	// Setup for next state
 	IntDisable(INT_EDGE_DETECT);							// Enable specific interrupt. Int_EDGE_DETECT = Nr. 16  (=> all GPIO-interrupts   ?? )
 	AONRTCEnable();											// PA: Enable RTC
-/*
+
+	/*
 	// power off and set Refresh on
 	// -- moved functions from in the middle of interrupt settings
 	powerDisablePeriph(); //Disable clock for GPIO in CPU run mode
@@ -73,7 +84,7 @@ void initSensortag(void){
 	powerEnableCacheRetention(); 							// Cache retention must be enabled in Idle if flash domain is turned off (to avoid cache corruption)
 	powerEnableAUXPdReq(); 									//AUX - request to power down (takes no effect since force on is set)
 	powerDisableAuxRamRet();
-	*/
+*/
 }
 
 
@@ -104,19 +115,21 @@ void setData(void){
 
 void sendData(){
 
-	// Flags for RF-communication supervision
+	// Flags for RF-Doorbell-communication between CPU M3 and RFC M0
 	rfBootDone  = 0;
 	rfSetupDone = 0;
 	rfAdvertisingDone = 0;
 
 	powerEnableRFC(); 							// Set power bit
+	//powerEnableCPU();							// baek. See RF Technical Manual, p.1474
 	waitUntilRFCReady();
-			initRadioInts();  					// Define which interrupts are detected (int vector table)
-	runRadio();
+	enableRadioInterrupts();  					// Set enable bit for CPE communication interrupts
+	runRadio();									// Power CPU, RAM and CPE
 
 	waitUntilAUXReady(); 						// AUX is needed to configure higher oscillator
 	OSCHF_TurnOnXosc();  						// Enable 24 MHz XTAL (higher clk for sending)
-	while( ! rfBootDone) {
+	int debug = rfBootDone; // = 0
+	while( ! rfBootDone) { // set by CPE interrupt 												!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! hanging here BootDone = 0
 		powerDisableCPU();
 		// Request radio to keep on system
 		//busPRCMDeepSleep();
@@ -141,6 +154,7 @@ void sendData(){
 	  PRCMDeepSleep();
 	}
 	radioCmdBusRequest(false);					// Request radio to not force on system bus any more
+	RFCAckIntClear(); 	//baek				// clear RFC Interrupts
 	AONRTCEnable();
 }
 
@@ -186,14 +200,17 @@ int main(void) {
 
 	initSensortag(); // end: enable AONRTC(); No powerOff
 
+	// initRFOnlyForDebugging();
+
 	while(1) {
+
 		// interrupt driven:
 		// ------------------
 		// Fix-timed RTC-interrupt for wake up from sleep()
 		// Read GPIO, set data, send data
 		getData();
 		setData();
-		sendData();
+		sendData(); // hangs here:
 		// sleep();
 	}
 }

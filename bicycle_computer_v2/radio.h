@@ -2,7 +2,7 @@
 
 void initRadio(void);
 void runRadio(void);
-void initRadioInts(void);
+void enableRadioInterrupts(void);
 void initRadioStructs(void);
 
 void radioPatch(void);

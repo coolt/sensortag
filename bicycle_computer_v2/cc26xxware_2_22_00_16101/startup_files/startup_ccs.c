@@ -51,7 +51,7 @@
 #include "../radio_files/rfc_api/ble_cmd.h"
 #include "../radio_files/rfc_api/mailbox.h"
 #include "../radio_files/patches/ble/apply_patch.h"
-#include "../radio_files/overrides/ble_overrides.h"
+// #include "../radio_files/overrides/ble_overrides.h"  // linker-fehler, wenn zweimal included
 #include "../driverLib/prcm.h"
 #include "../../radio.h"
 #include "../../system.h"
@@ -65,6 +65,10 @@ volatile bool rfAdvertisingDone;
 
 
 
+
+
+
+
 //*****************************************************************************
 //
 //! Forward declaration of the reset ISR and the default fault handlers.
@@ -74,7 +78,8 @@ void        ResetISR( void );
 static void NmiSR( void );
 static void FaultISR( void );
 static void IntDefaultHandler( void );
-extern int  main(void);
+extern int  main(void);// Advertisment data. Must be global for other files to access it.
+
 
 
 
@@ -223,12 +228,11 @@ void (* const g_pfnVectors[])(void) =
 //RTC interrupt handler
 void AONRTCIntHandler(void) {
 
-
 	  // Clear RTC event flag
 	  do{
-		  int b = 3;
+		int b = 3;
 		//AONRTCEventClear(AON_RTC_CH2);
-		  HWREGBITW(AON_RTC_BASE + AON_RTC_O_EVFLAGS, AON_RTC_EVFLAGS_CH2_BITN) = 1;
+		HWREGBITW(AON_RTC_BASE + AON_RTC_O_EVFLAGS, AON_RTC_EVFLAGS_CH2_BITN) = 1;
 		int i = 5;
 		AONRTCEnable();		// aktivieren für nächstes Mal
 	  }
@@ -236,9 +240,41 @@ void AONRTCIntHandler(void) {
 }
 
 
-//Radio CPE ch 1 interrupt - used for BOOT_DONE ISR (by default on CH1)
+static void GPIOIntHandler(void){
+
+	uint32_t pin_mask;
+
+	// power on GPIO
+	powerEnablePeriph();
+	powerEnableGPIOClockRunMode();
+	while((PRCMPowerDomainStatus(PRCM_DOMAIN_PERIPH) != PRCM_DOMAIN_POWER_ON)); /* Wait for domains to power on */
+
+	// GPIO_EVFLAG31-0 = alle GPIO
+	pin_mask = (HWREG(GPIO_BASE + GPIO_O_EVFLAGS31_0) & GPIO_PIN_MASK);
+	/* Clear the interrupt flags */
+	HWREG(GPIO_BASE + GPIO_O_EVFLAGS31_0) = pin_mask;
+
+	// Power off
+	powerDisablePeriph();
+	HWREGBITW(PRCM_BASE + PRCM_O_GPIOCLKGR, PRCM_GPIOCLKGR_CLK_EN_BITN) = 0; // Disable clock for GPIO in CPU run mode
+	// Load clock settings
+	HWREGBITW(PRCM_BASE + PRCM_O_CLKLOADCTL, PRCM_CLKLOADCTL_LOAD_BITN) = 1;
+
+	//To avoid second interupt with register = 0 (its not fast enough!!)
+	__asm(" nop");
+	__asm(" nop");
+	__asm(" nop");
+	__asm(" nop");
+	__asm(" nop");
+	__asm(" nop");
+}
+
+// RFC-Handler
+// Called from CPE (= CPU from RFChip).
+// Enabeling by: RFCPEIFG = 1 and RFCPEIEN = 1 -> RFCPEISL sends Interrupt
+// Controlled by the Door Bell module (p. 1475)
 void RFCCPE1IntHandler(void) {
-  //Clear all RF Core ISR flags and wair until done
+  //Clear all RF Core ISR flags and wait until done
   do {
     HWREG(RFC_DBELL_BASE + RFC_DBELL_O_RFCPEIFG) = ~RFC_DBELL_RFCPEIFG_BOOT_DONE_M;
   }
@@ -363,34 +399,7 @@ static void DebugMonIntHandler( void ){ while(1) {}}
 static void PendSVIntHandler( void ){ while(1) {}}
 static void SysTickIntHandler( void ){ while(1) {}}
 
-static void GPIOIntHandler(void){
 
-	uint32_t pin_mask;
-
-	// power on GPIO
-	powerEnablePeriph();
-	powerEnableGPIOClockRunMode();
-	while((PRCMPowerDomainStatus(PRCM_DOMAIN_PERIPH) != PRCM_DOMAIN_POWER_ON)); /* Wait for domains to power on */
-
-	// GPIO_EVFLAG31-0 = alle GPIO
-	pin_mask = (HWREG(GPIO_BASE + GPIO_O_EVFLAGS31_0) & GPIO_PIN_MASK);
-	/* Clear the interrupt flags */
-	HWREG(GPIO_BASE + GPIO_O_EVFLAGS31_0) = pin_mask;
-
-	// Power off
-	powerDisablePeriph();
-	HWREGBITW(PRCM_BASE + PRCM_O_GPIOCLKGR, PRCM_GPIOCLKGR_CLK_EN_BITN) = 0; // Disable clock for GPIO in CPU run mode
-	// Load clock settings
-	HWREGBITW(PRCM_BASE + PRCM_O_CLKLOADCTL, PRCM_CLKLOADCTL_LOAD_BITN) = 1;
-
-	//To avoid second interupt with register = 0 (its not fast enough!!)
-	__asm(" nop");
-	__asm(" nop");
-	__asm(" nop");
-	__asm(" nop");
-	__asm(" nop");
-	__asm(" nop");
-}
 static void I2CIntHandler( void ){ while(1) {}}
 static void AONIntHandler( void ){ while(1) {}}
 static void UART0IntHandler( void ){ while(1) {}}

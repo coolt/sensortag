@@ -22,6 +22,9 @@
 #include "cc26xxware_2_22_00_16101/driverLib/ioc.h"  // Grundeinstellungen aktivieren domains
 #include "cc26xxware_2_22_00_16101/inc/hw_aon_event.h"
 
+// RFC
+#include "radio.h"
+
 
 void initRTCInterrupts(void) {
 
@@ -70,11 +73,24 @@ void initGPIOInterrupts(void){
 	//HWREG(AON_EVENT_BASE + AON_EVENT_O_MCUWUSEL) = AON_EVENT_MCUWUSEL_WU0_EV_PAD;  //Set device to wake MCU from standby all pins
 }
 
+/*
+void initRadio(void) {
+  // Set radio to BLE mode
+  HWREG(PRCM_BASE + PRCM_O_RFCMODESEL) = 0x1;
 
+   //Set up MAC address. Currently using TI Provided adress
+   devAddress = *((uint64_t*)(FCFG1_BASE+FCFG1_O_MAC_BLE_0));
+
+  //Chain advertisment commands.
+  cmdAdv0.pNextOp = (uint8_t *)&cmdAdv1;
+  cmdAdv1.pNextOp = (uint8_t *)&cmdAdv2;
+  cmdAdv2.pNextOp = (uint8_t *)&cmdFsPd;
+}
+*/
 
 void initRFInterrupts(void) {
 
-   // RFCore Interrupts
+   // RFCore (=CPE) Interrupts
   // CPE1 - Int channels 31:16: Boot done is bit 30
   HWREG(NVIC_EN0) = 1 << (INT_RF_CPE1 - 16);
   // CPE0 - Int channels  15:0: CMD_DONE is bit 1, LAST_CMD_DONE is bit 0
@@ -82,6 +98,8 @@ void initRFInterrupts(void) {
   // RTC combined event output
   HWREG(NVIC_EN0) = 1 << (INT_AON_RTC - 16);
 
+  // RFC Int enable: (baek, temporary) See rfc.h
+  // RFCCpe0IntEnable(uint32_t ui32Mask);   // Enable CPE0 Interrupt
 }
 
 void ledInit(void)
@@ -178,6 +196,11 @@ void powerDisablePeriph(void) {
 void powerDisableCPU(void) {
   // Turn off CPU domain in CPU Deep Sleep
   HWREGBITW(PRCM_BASE + PRCM_O_PDCTL1CPU, PRCM_PDCTL1CPU_ON_BITN) = 0;
+}
+
+void powerEnableCPU(void) { // baek: improvisiert
+  // hopefully turn on CPU domain in CPU Deep Sleep
+  HWREGBITW(PRCM_BASE + PRCM_O_PDCTL1CPU, PRCM_PDCTL1CPU_ON_BITN) = 1;
 }
 
 void powerEnableFlashInIdle(void) {
