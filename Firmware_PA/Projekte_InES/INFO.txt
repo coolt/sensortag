@@ -1,0 +1,7 @@
+
+	Hier sind die vom InES erhaltenen Software Files für das Code Composer Studio
+	
+	- Contiki:						Erste Version um BLE Pakete zu versenden, allerdings mit dem Contiki RTOS 
+	- BLE_adv_lar:					Version mit RTC und versuche mit Standby, Versenden von BLE auf 1 Kanal
+	- simplebroadcast_ccs1:			1. Version mit RTC, Standby mit aufwachen vom RTC, Idle und BLE Advertising auf 3 Kanälen
+	- simplebroadcast_ccs2:			Verbesserte und Effizientere Version zu 1. Version
