@@ -73,7 +73,7 @@ void initRTCInterrupts(void) {
 }
 void initGPIOInterrupts(void){
 
-	// Button = BOARD_IOID_KEY_RIGHT= IOID_4, external interrupt on rising edge and wake up
+/*	// Button = BOARD_IOID_KEY_RIGHT= IOID_4, external interrupt on rising edge and wake up
 	IOCPortConfigureSet(BOARD_IOID_KEY_RIGHT, IOC_PORT_GPIO, IOC_IOMODE_NORMAL | IOC_FALLING_EDGE | IOC_INT_ENABLE | IOC_IOPULL_UP | IOC_INPUT_ENABLE | IOC_WAKE_ON_LOW);
 	HWREG(AON_EVENT_BASE + AON_EVENT_O_MCUWUSEL) = AON_EVENT_MCUWUSEL_WU0_EV_PAD;  //Set device to wake MCU from standby on all pins
 	// Does not work with AON_EVENT_MCUWUSEL_WU0_EV_PAD4, the specific pin for button
@@ -85,6 +85,21 @@ void initGPIOInterrupts(void){
 	// BAT_LOW = IOID_28, external interrupt on rising edge and wake up
 	//IOCPortConfigureSet(BAT_LOW, IOC_PORT_GPIO, IOC_IOMODE_NORMAL | IOC_FALLING_EDGE | IOC_INT_ENABLE | IOC_IOPULL_UP | IOC_INPUT_ENABLE | IOC_WAKE_ON_LOW);
 	//HWREG(AON_EVENT_BASE + AON_EVENT_O_MCUWUSEL) = AON_EVENT_MCUWUSEL_WU0_EV_PAD;  //Set device to wake MCU from standby all pins
+*/
+	/*
+	   * erstes Mail
+	   *  HWREG(AON_EVENT_BASE + AON_EVENT_O_MCUWUSEL) = AON_EVENT_MCUWUSEL_WU1_EV_PAD | AON_EVENT_MCUWUSEL_WU0_EV_RTC_CH2;  //Does not work with AON_EVENT_MCUWUSEL_WU0_EV_PAD4 --> WHY??
+	   */
+
+	  /*
+	   * Zweites Mail
+	   *   AONRTCIncValueCh2Set(WAKE_INTERVAL_TICKS);
+	   */
+
+	  //Config IOID4 for external interrupt on rising edge and wake up
+	 IOCPortConfigureSet(BOARD_IOID_KEY_RIGHT, IOC_PORT_GPIO, IOC_IOMODE_NORMAL | IOC_FALLING_EDGE | IOC_INT_ENABLE | IOC_IOPULL_UP | IOC_INPUT_ENABLE | IOC_WAKE_ON_LOW);
+	  //Set device to wake MCU from standby on PIN 4 (BUTTON1)
+	 HWREG(AON_EVENT_BASE + AON_EVENT_O_MCUWUSEL) = AON_EVENT_MCUWUSEL_WU1_EV_PAD | AON_EVENT_MCUWUSEL_WU2_EV_RTC_CH0 | AON_EVENT_MCUWUSEL_WU0_EV_RTC_CH2;  //Does not work with AON_EVENT_MCUWUSEL_WU0_EV_PAD4 --> WHY??
 }
 
 /*

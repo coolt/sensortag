@@ -36,208 +36,176 @@
 volatile bool rfBootDone;
 volatile bool rfSetupDone;
 volatile bool rfAdvertisingDone;
+
 uint8_t payload[ADVLEN];
 
 
+// functions
+void initSensortag(void){
+
+		// power off
+		AONWUCJtagPowerOff(); 									//Disable JTAG to allow for Standby
+
+		// power on
+		powerEnableAuxForceOn(); 								// WUC domain
+		powerEnableXtalInterface(); 							// clk WUC
+		powerDivideInfClkDS(PRCM_INFRCLKDIVDS_RATIO_DIV32); 	// Divide INF clk to save Idle mode power (increases interrupt latency)
+		powerEnablePeriph();
+		powerEnableGPIOClockRunMode();
+		while((PRCMPowerDomainStatus(PRCM_DOMAIN_PERIPH) != PRCM_DOMAIN_POWER_ON)); /* Wait for domains to power on */
+
+		// Configuartions
+		sensorsInit();											// Enable needed Sensors
+		initRadio();											// Set Communicationmode = BLE, Channels = 3, Advertising modus
+		ledInit();
+
+		// Configure Interrupts
+		//initRTCInterrupts();		// Ziel							// CH0: WakeUp, CH2: Speed calculation
+		initRTC();// Dario
+		initGPIOInterrupts();									// Define IOPorts for Interrupt, Add GPIO-mask to WU-Event
+		initRFInterrupts(); 									// Set RFInterrupts to NVIC
+		CPUcpsie();												// All extern interrupts enable (globaly)
+
+		// Setup for next state
+		IntEnable(INT_EDGE_DETECT); // Dario
+//		IntDisable(INT_EDGE_DETECT);							// Enable specific interrupt. Int_EDGE_DETECT = Nr. 16  (=> all GPIO-interrupts   ?? )
+//		AONRTCEnable();											// PA: Enable RTC
+
+		// power off and set Refresh on
+		// -- moved functions from in the middle of interrupt settings
+		powerDisablePeriph(); //Disable clock for GPIO in CPU run mode
+		HWREGBITW(PRCM_BASE + PRCM_O_GPIOCLKGR, PRCM_GPIOCLKGR_CLK_EN_BITN) = 0;
+		HWREGBITW(PRCM_BASE + PRCM_O_CLKLOADCTL, PRCM_CLKLOADCTL_LOAD_BITN) = 1; // Load clock settings
+		// -- old functions
+		powerDisableFlashInIdle();  							// Turn off FLASH in idle mode == stand by mode
+		powerEnableCacheRetention(); 							// Cache retention must be enabled in Idle if flash domain is turned off (to avoid cache corruption)
+		powerEnableAUXPdReq(); 									//AUX - request to power down (takes no effect since force on is set)
+		powerDisableAuxRamRet();
+}
 
 
-int main(void) {
+void getData(void){
 
-  uint8_t payload[ADVLEN];
+	int i = 8;
 
-  //Disable JTAG to allow for Standby
-  AONWUCJtagPowerOff();
+}
+void setData(void){
 
-  //Force AUX on
-  powerEnableAuxForceOn();
-  powerEnableRFC();
+	//memset(payload, 0, BLE_ADV_PAYLOAD_BUF_LEN); // Clear payload buffer  //DOES NOT WORK !!!!!!!!!!
 
-  powerEnableXtalInterface();
-  //powerConfigureRecharge(); --> Optimized version later in this code (brts)
-  
-  // Divide INF clk to save Idle mode power (increases interrupt latency)
-  powerDivideInfClkDS(PRCM_INFRCLKDIVDS_RATIO_DIV32);
+	//Fill payload buffer with adv parameter data
+	uint8_t p = 0;
+	payload[p++] = 0x01;
+	payload[p++] = 0x02;
+	payload[p++] = 0x03;
+	payload[p++] = 0x04;
+	payload[p++] = 0x05;
+	payload[p++] = 0x06;
+	payload[p++] = 0x07;
+	payload[p++] = 0x08;
+	payload[p++] = 0x09;
 
-  initRTC();
+	//Start radio setup and linked advertisment
+	radioUpdateAdvData(10, payload); 			//Update advertising byte based on IO inputs
+}
 
-  powerEnablePeriph();
-  powerEnableGPIOClockRunMode();
 
-  /* Wait for domains to power on */
-  while((PRCMPowerDomainStatus(PRCM_DOMAIN_PERIPH) != PRCM_DOMAIN_POWER_ON));
+void sendData(){
 
-  sensorsInit();
-  ledInit();
-
-  /*
-   * erstes Mail
-   *  HWREG(AON_EVENT_BASE + AON_EVENT_O_MCUWUSEL) = AON_EVENT_MCUWUSEL_WU1_EV_PAD | AON_EVENT_MCUWUSEL_WU0_EV_RTC_CH2;  //Does not work with AON_EVENT_MCUWUSEL_WU0_EV_PAD4 --> WHY??
-   */
-
-  /*
-   * Zweites Mail
-   *   AONRTCIncValueCh2Set(WAKE_INTERVAL_TICKS);
-   */
-
-  //Config IOID4 for external interrupt on rising edge and wake up
- IOCPortConfigureSet(BOARD_IOID_KEY_RIGHT, IOC_PORT_GPIO, IOC_IOMODE_NORMAL | IOC_FALLING_EDGE | IOC_INT_ENABLE | IOC_IOPULL_UP | IOC_INPUT_ENABLE | IOC_WAKE_ON_LOW);
-  //Set device to wake MCU from standby on PIN 4 (BUTTON1)
- HWREG(AON_EVENT_BASE + AON_EVENT_O_MCUWUSEL) = AON_EVENT_MCUWUSEL_WU1_EV_PAD | AON_EVENT_MCUWUSEL_WU2_EV_RTC_CH0 | AON_EVENT_MCUWUSEL_WU0_EV_RTC_CH2;  //Does not work with AON_EVENT_MCUWUSEL_WU0_EV_PAD4 --> WHY??
-
-  IntEnable(INT_EDGE_DETECT);
-
-  powerDisablePeriph();
-  //Disable clock for GPIO in CPU run mode
-  HWREGBITW(PRCM_BASE + PRCM_O_GPIOCLKGR, PRCM_GPIOCLKGR_CLK_EN_BITN) = 0;
-  // Load clock settings
-  HWREGBITW(PRCM_BASE + PRCM_O_CLKLOADCTL, PRCM_CLKLOADCTL_LOAD_BITN) = 1;
-
-  initRFInterrupts(); // new: vorher initInterrupts()
-  CPUcpsie();
-  initRadio();
-
-  // Turn off FLASH in idle mode
-  powerDisableFlashInIdle();
-
-  // Cache retention must be enabled in Idle if flash domain is turned off (to avoid cache corruption)
-  powerEnableCacheRetention();
-
-  //AUX - request to power down (takes no effect since force on is set)
-  powerEnableAUXPdReq();
-  powerDisableAuxRamRet();
-
-  //Clear payload buffer
-    memset(payload, 0, BLE_ADV_PAYLOAD_BUF_LEN);
-
-    //Fill payload buffer with adv parameter data
-    uint8_t p;
-    p = 0;
-    payload[p++] = 0x02;          /* 2 bytes */
-    payload[p++] = 0x01;
-    payload[p++] = 0x05;          /* LE Limited Discoverable Mode" & "BR/EDR Not Supported */
-    payload[p++] = 0x09; //1 + strlen(beacond_config.adv_name);
-    payload[p++] = 0x03;//BLE_ADV_TYPE_NAME;
-    payload[p++] = 0x00;//BLE_ADV_TYPE_NAME;
-    payload[p++] = 0xDE;//BLE_ADV_TYPE_NAME;
-    payload[p++] = 0x01;//BLE_ADV_TYPE_NAME;
-    payload[p++] = 0x35;//BLE_ADV_TYPE_NAME;
-
-  //Start radio setup and linked advertisment
-  radioUpdateAdvData(10, payload);
-
-  while(1) {
-
+	// Flags for RF-Doorbell-communication between CPU M3 and RFC M0
     rfBootDone  = 0;
     rfSetupDone = 0;
     rfAdvertisingDone = 0;
 
-    //Wait until RF Core PD is ready before accessing radio
-    waitUntilRFCReady();
-    initRadioInts();
-    runRadio();
+	powerEnableRFC(); 							// Set power bit
+	waitUntilRFCReady();
+	enableRadioInterrupts();  					// Set enable bit for CPE communication interrupts
+	runRadio();									// Power CPU, RAM and CPE
 
-    //Wait until AUX is ready before configuring oscillators
-    waitUntilAUXReady();
+	waitUntilAUXReady(); 						// AUX is needed to configure higher oscillator
+	OSCHF_TurnOnXosc();  						// Enable 24 MHz XTAL (higher clk for sending)
+	int debug = rfBootDone; // = 0
+	while( ! rfBootDone) { // set by CPE interrupt 												!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! hanging here BootDone = 0
+		powerDisableCPU();
+		PRCMDeepSleep();	//note				// if commented out: Request radio to keep on system bus
+	}
+	radioCmdBusRequest(true); 					// Request radio to keep on system bus
+	radioPatch(); 								// Patch CM0 - no RFE patch needed for TX only
+	radioCmdStartRAT(); 						// Start radio timer
+	powerEnableFlashInIdle(); 					// Enable Flash access while doing radio setup
+	while( !OSCHF_AttemptToSwitchToXosc()) 		// Switch to XTAL, higher clock
+	{}
 
-    //Enable 24MHz XTAL
-    OSCHF_TurnOnXosc();
+	// Sending data
+	radioSetupAndTransmit();
+	while( ! rfSetupDone) {
+		powerDisableCPU();
+		PRCMDeepSleep();
+	}
+	powerDisableFlashInIdle(); 					// Disable flashafter CMD_RADIO_SETUP is done (radio setup reads FCFG trim values)
+	// AdvertisingDone = 3 packets are send
+	while( ! rfAdvertisingDone) {
+	  powerDisableCPU();
+	  PRCMDeepSleep();
+	}
+	radioCmdBusRequest(false);					// Request radio to not force on system bus any more
 
-    //IDLE until BOOT_DONE interrupt from RFCore is triggered
-    while( ! rfBootDone) {
-      powerDisableCPU();
-      PRCMDeepSleep();
-    }
+	// not shure: added baekc
+	RFCAckIntClear(); 	//baek				// clear RFC Interrupts
+	AONRTCEnable();		// baek. for next state
+}
 
-    //This code runs after BOOT_DONE interrupt has woken up the CPU again
-    // ->
-    //Request radio to keep on system bus
-    radioCmdBusRequest(true);
 
-    //Patch CM0 - no RFE patch needed for TX only
-    radioPatch();
+void sleep(){
 
-    //Start radio timer
-    radioCmdStartRAT();
+	// Standby procedure
+	powerDisableXtal();
+	powerDisableRFC();
+	OSCHfSourceSwitch(); 						// lower clk
+	powerDisableAuxForceOn(); 					// Higher oscillator interface no more needed
+	powerEnableMcuPdReq(); 						// Goto Standby. MCU will now request to be powered down on DeepSleep
+	powerDisableCache();
+	powerDisableCacheRetention();
 
-    //Enable Flash access while doing radio setup
-    powerEnableFlashInIdle();
+	//Calculate next recharge (Refreshtime): must be BEFORE POWER DOWN
+	SysCtrlSetRechargeBeforePowerDown(XOSC_IN_HIGH_POWER_MODE);
+	SysCtrlAonSync(); 							// Synchronize transactions to AON domain to ensure AUX has turned off
 
-    //Switch to XTAL
-    while( !OSCHF_AttemptToSwitchToXosc())
-    {}
-  
-    //Start radio setup and linked advertisment
-    radioSetupAndTransmit();
+	// Enter Standby
+	powerDisableCPU();
+	PRCMDeepSleep();
+	SysCtrlAonUpdate();
+	SysCtrlAdjustRechargeAfterPowerDown();   	// AFTER POWER DOWN: Set refresh cycle
+	SysCtrlAonSync();
 
-    //Wait in IDLE for CMD_DONE interrupt after radio setup. ISR will disable radio interrupts
-    while( ! rfSetupDone) {
-      powerDisableCPU();
-      PRCMDeepSleep();
-    }
 
-    //Disable flash in IDLE after CMD_RADIO_SETUP is done (radio setup reads FCFG trim values)
-    powerDisableFlashInIdle();
-
-    //Wait in IDLE for LAST_CMD_DONE after 3 adv packets
-    while( ! rfAdvertisingDone) {
-      powerDisableCPU();
-      PRCMDeepSleep();
-    }
-
-    //Request radio to not force on system bus any more
-    radioCmdBusRequest(false);
-    
-    //
-    // Standby procedure
-    //
-    
-    powerDisableXtal();
-
-    // Turn off radio
-    powerDisableRFC();
-    
-    // Switch to RCOSC_HF
-    OSCHfSourceSwitch();
-
-    // Allow AUX to turn off again. No longer need oscillator interface
-    powerDisableAuxForceOn();
-
-    // Goto Standby. MCU will now request to be powered down on DeepSleep
-    powerEnableMcuPdReq();
-
-    // Disable cache and retention
-    powerDisableCache();
-    powerDisableCacheRetention();
-
-    //Calculate next recharge
-    SysCtrlSetRechargeBeforePowerDown(XOSC_IN_HIGH_POWER_MODE);
-
-    // Synchronize transactions to AON domain to ensure AUX has turned off
-    SysCtrlAonSync();
-
-    //
-    // Enter Standby
-    //
-
-    powerDisableCPU();
-    PRCMDeepSleep();
-
-    SysCtrlAonUpdate();
-    SysCtrlAdjustRechargeAfterPowerDown();
-    SysCtrlAonSync();
-
-    //
 	// Wakeup from RTC every 100ms, code starts execution from here
-	//
-   
-    powerEnableRFC();
-    powerEnableAuxForceOn();
+	// ---------------------------------------------
+	// WAITING FOR INTERRUPT
+	// HERE: OLD CODE. FIX WAKE UP TIME
+	powerEnableRFC(); // ????????????????????????????????????????????????
+	powerEnableAuxForceOn(); // ??????????????????????' not done in RTC interrupt
 
-    //Re-enable cache and retention
-    powerEnableCache();
-    powerEnableCacheRetention();
+	//Re-enable cache and retention
+	powerEnableCache();
+	powerEnableCacheRetention();
 
-    //MCU will not request to be powered down on DeepSleep -> System goes only to IDLE
-    powerDisableMcuPdReq();
+	//MCU will not request to be powered down on DeepSleep -> System goes only to IDLE
+	powerDisableMcuPdReq();
+}
+
+
+//===============================================================================
+
+int main(void) {
+
+  initSensortag();
+
+  while(1) {
+
+	getData();
+	setData();
+	sendData();
+    sleep();
   }
 }

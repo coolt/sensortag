@@ -131,8 +131,8 @@ void sendData(){
 	int debug = rfBootDone; // = 0
 	while( ! rfBootDone) { // set by CPE interrupt 												!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! hanging here BootDone = 0
 		powerDisableCPU();
-		// Request radio to keep on system
-		//busPRCMDeepSleep();
+		// Request radio to keep on system bus
+		// PRCMDeepSleep();
 	}
 	radioCmdBusRequest(true); 					// Request radio to keep on system bus
 	radioPatch(); 								// Patch CM0 - no RFE patch needed for TX only
