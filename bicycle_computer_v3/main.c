@@ -23,7 +23,7 @@
 #include <driverLib/gpio.h>				// Konstanten GPIO Pins
 
 // RF-Chip (M0)
-#include <radio.h>
+#include "radio.h"
 #include <driverLib/rfc.h>				// Set up RFC interrupts
 
 // RTC
@@ -31,13 +31,15 @@
 #include <driverLib/aon_rtc.h>
 #include <inc/hw_aon_event.h>
 
+#include "string.h"
+
 
 // globale variables: declared in config.h, used in radio.c and startup_ccs
 volatile bool rfBootDone;
 volatile bool rfSetupDone;
 volatile bool rfAdvertisingDone;
 
-uint8_t payload[ADVLEN];
+char payload[ADVLEN];
 
 
 // functions
@@ -91,7 +93,7 @@ void getData(void){
 }
 void setData(void){
 
-	//memset(payload, 0, BLE_ADV_PAYLOAD_BUF_LEN); // Clear payload buffer  //DOES NOT WORK !!!!!!!!!!
+	memset(payload, 0, ADVLEN); // Clear payload buffer  //DOES NOT WORK !!!!!!!!!!
 
 	//Fill payload buffer with adv parameter data
 	uint8_t p = 0;
@@ -120,14 +122,14 @@ void sendData(){
 	powerEnableRFC(); 							// Set power bit
 	waitUntilRFCReady();
 	enableRadioInterrupts();  					// Set enable bit for CPE communication interrupts
-	runRadio();									// Power CPU, RAM and CPE
+	runRadio();									// Power CPU (M3), RAM and CPE (M0)
 
 	waitUntilAUXReady(); 						// AUX is needed to configure higher oscillator
 	OSCHF_TurnOnXosc();  						// Enable 24 MHz XTAL (higher clk for sending)
 	int debug = rfBootDone; // = 0
-	while( ! rfBootDone) { // set by CPE interrupt 												!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! hanging here BootDone = 0
+	while( ! rfBootDone) { 						// rfBootDone set by CPE interrupt 												!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! hanging here BootDone = 0
 		powerDisableCPU();
-		PRCMDeepSleep();	//note				// if commented out: Request radio to keep on system bus
+		PRCMDeepSleep();	//note:				// if commented out: Request radio to keep on system bus
 	}
 	radioCmdBusRequest(true); 					// Request radio to keep on system bus
 	radioPatch(); 								// Patch CM0 - no RFE patch needed for TX only
@@ -143,16 +145,14 @@ void sendData(){
 		PRCMDeepSleep();
 	}
 	powerDisableFlashInIdle(); 					// Disable flashafter CMD_RADIO_SETUP is done (radio setup reads FCFG trim values)
-	// AdvertisingDone = 3 packets are send
-	while( ! rfAdvertisingDone) {
+	while( ! rfAdvertisingDone) {				// AdvertisingDone = true, when 3 packets are send
 	  powerDisableCPU();
 	  PRCMDeepSleep();
 	}
 	radioCmdBusRequest(false);					// Request radio to not force on system bus any more
 
-	// not shure: added baekc
-	RFCAckIntClear(); 	//baek				// clear RFC Interrupts
-	AONRTCEnable();		// baek. for next state
+	RFCAckIntClear(); 	// add baek.			// clear RFC Interrupts
+	AONRTCEnable();		// add baek. 			// defined interrupt state for next state
 }
 
 

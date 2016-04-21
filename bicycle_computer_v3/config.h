@@ -18,7 +18,7 @@
 #define ADVLEN 10
 
 // RF-Chip needs some global variables
-extern uint8_t payload[ADVLEN]; 			// data buffer
+extern char payload[ADVLEN]; 			// data buffer
 
 extern volatile bool rfBootDone;			// communication flag
 extern volatile bool rfSetupDone;			// communication flag
