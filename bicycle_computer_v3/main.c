@@ -94,10 +94,20 @@ void getData(void){
 
 	// start system
 	powerEnableRFC();
-	powerEnableAuxForceOn(); // ??????????????????????' not done in RTC interrupt
+	powerEnableAuxForceOn(); // ??????????????????????' not done in RTC interrupt ??
 	powerEnableCache(); // ?????  Wann notwendig ?? immer
 
-	int i = 8;
+	// read STS, LTS to know Energy state
+	// ----------------------------------
+	// g_current_energy_state = getEnergyStateFromSPI();
+	g_current_energy_state = LOW_ENERGY; 															// TO DEL
+	updateRTCWakeUpTime(g_current_energy_state);
+
+	// measure speed
+	// -------------
+
+	// calculate velocity
+	// ------------------
 
 }
 void setData(void){
@@ -211,9 +221,6 @@ void sleep(){
 
 
 //===============================================================================
-void set_time(long value){
-	g_current_wake_up_time = value;
-}
 
 
 int main(void) {
@@ -222,8 +229,6 @@ int main(void) {
 
   // interrupt driven application
   while(1) {
-
-	g_current_wake_up_time = WAKE_INTERVAL_MIDDLE_ENERGY;
 
 	// wait for interrupts
 	getData();

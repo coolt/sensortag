@@ -1,7 +1,6 @@
 
 #include <inc/hw_types.h>
 
-// void initInterrupts(void); // Dario: alt (wird ersetzt)
 
 // system configuration
 void sensorsInit(void); // new
