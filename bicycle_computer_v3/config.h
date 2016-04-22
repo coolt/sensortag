@@ -21,8 +21,8 @@ extern long g_current_wake_up_time/* = WAKE_INTERVAL_HIGH_ENERGY*/;		// = max. =
 
 
 
-// Advertisment payload length in bytes
-#define ADVLEN 10
+// Length of Data-Block (inclusive length, type, uuid)
+#define ADVLEN 16
 
 // RF-Chip needs some global variables
 extern char payload[ADVLEN]; 						// data buffer

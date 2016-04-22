@@ -48,7 +48,7 @@ void initRTCInterrupts(void) {
 
 	// Ch 0: Wake up
 	// --------------
-	AONRTCCompareValueSet(AON_RTC_CH0, WAKE_INTERVAL_LOW_ENERGY); 	// Inital Wake up value  (= 10 s)
+	AONRTCCompareValueSet(AON_RTC_CH0, WAKE_INTERVAL_HIGH_ENERGY); 	// Inital Wake up value  (= 10 s)
 	AONRTCChannelEnable(AON_RTC_CH0);								// Enable channel 0
 
 /*	// Ch 2: Speed Meausrement  -> init by calling

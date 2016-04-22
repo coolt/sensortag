@@ -102,22 +102,43 @@ void getData(void){
 }
 void setData(void){
 
+	// to app: 62 bytes (Daten auf 37 bytes)
+	// ADVLen = 37 Databytes (inkl. length)
+
 	memset(payload, 0, ADVLEN); // Clear payload buffer  //DOES NOT WORK !!!!!!!!!!
 
-	//Fill payload buffer with adv parameter data
-	uint8_t p = 0;
-	payload[p++] = 0x01;
-	payload[p++] = 0x02;
-	payload[p++] = 0x03;
-	payload[p++] = 0x04;
-	payload[p++] = 0x05;
-	payload[p++] = 0x06;
-	payload[p++] = 0x07;
-	payload[p++] = 0x08;
-	payload[p++] = 0x09;
+	//Fill payload buffer with adv parameter data = ADV DATA
+	// immer 2 bytes, weil UUID als Type
+	// see ADV structure
+
+	payload[0] = ADVLEN - 1; 		// length = ADV-Length - 1 (1 Byte)
+
+	payload[1] = 0x03; 				// Type (1 Byte)  =>   0x03 = UUID -> immer 2 Bytes
+
+	payload[2] = 0xDE; 				// UUID (2 Bytes) =>   0xDE00 (UUID im Ines)
+	payload[3] = 0x00;
+
+	payload[4] = 0x05; 				// Geschwindigkeit (2 Bytes)
+	payload[5] = 0x06; 				//
+
+	payload[6] = 0x01;				// Checksumme (2 Bytes)
+	payload[7] = 0x02;
+
+	payload[8] = 0x03;				// Sensor 1: Höhenmeter
+	payload[9] = 0x04;
+
+	payload[10] = 0x05;				// Sensor 2
+	payload[11] = 0x06;
+
+	payload[12] = 0x07;				// Sensor 3
+	payload[13] = 0x08;
+
+	payload[14] = 0x09;				// Laufnummer (Sequenznummer, ob Packet fehlt)
+	payload[15] = 0x0A;
+
 
 	//Start radio setup and linked advertisment
-	radioUpdateAdvData(10, payload); 			//Update advertising byte based on IO inputs
+	radioUpdateAdvData(16, payload); 			//Update advertising byte based on IO inputs
 }
 
 
@@ -202,7 +223,7 @@ int main(void) {
   // interrupt driven application
   while(1) {
 
-	g_current_wake_up_time = WAKE_INTERVAL_LOW_ENERGY;
+	g_current_wake_up_time = WAKE_INTERVAL_MIDDLE_ENERGY;
 
 	// wait for interrupts
 	getData();
