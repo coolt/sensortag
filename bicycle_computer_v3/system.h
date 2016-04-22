@@ -8,7 +8,8 @@ void sensorsInit(void); // new
 void ledInit(void);  // new
 
 // interrupt configuration
-void initRTCInterrupts(void);
+void initRTCInterrupts(void); 					// enables RTC0 and RTC2, set RTC2
+void start_RTC_speedMeasurement(uint32_t ms); 	// setRTC0  (can not be initalized)
 void initGPIOInterrupts(void); // new baek, from main
 void initRFInterrupts(void); // refactored
 

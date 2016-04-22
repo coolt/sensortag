@@ -62,8 +62,7 @@ void initSensortag(void){
 		ledInit();
 
 		// Configure Interrupts
-		//initRTCInterrupts();		// Ziel							// CH0: WakeUp, CH2: Speed calculation
-		initRTC();// Dario
+		initRTCInterrupts();		// Ziel						// CH0: WakeUp, CH2: Speed calculation
 		initGPIOInterrupts();									// Define IOPorts for Interrupt, Add GPIO-mask to WU-Event
 		initRFInterrupts(); 									// Set RFInterrupts to NVIC
 		CPUcpsie();												// All extern interrupts enable (globaly)
@@ -78,28 +77,25 @@ void initSensortag(void){
 		powerDisablePeriph(); //Disable clock for GPIO in CPU run mode
 		HWREGBITW(PRCM_BASE + PRCM_O_GPIOCLKGR, PRCM_GPIOCLKGR_CLK_EN_BITN) = 0;
 		HWREGBITW(PRCM_BASE + PRCM_O_CLKLOADCTL, PRCM_CLKLOADCTL_LOAD_BITN) = 1; // Load clock settings
+
 		// -- old functions
 		powerDisableFlashInIdle();  							// Turn off FLASH in idle mode == stand by mode
 		powerEnableCacheRetention(); 							// Cache retention must be enabled in Idle if flash domain is turned off (to avoid cache corruption)
 		powerEnableAUXPdReq(); 									//AUX - request to power down (takes no effect since force on is set)
 		powerDisableAuxRamRet();
+		powerDisableMcuPdReq();									//MCU will not request to be powered down on DeepSleep -> System goes only to IDLE
 }
 
 
 void getData(void){
-	// Wakeup from RTC every 100ms, code starts execution from here
-		// ---------------------------------------------
-		// WAITING FOR INTERRUPT
-		// HERE: OLD CODE. FIX WAKE UP TIME
-		powerEnableRFC(); // ????????????????????????????????????????????????
-		powerEnableAuxForceOn(); // ??????????????????????' not done in RTC interrupt
 
-		//Re-enable cache and retention
-		powerEnableCache();
-		powerEnableCacheRetention();
+	// Wakeup from RTC according to energy-state
+	// ---------------------------------------------
 
-		//MCU will not request to be powered down on DeepSleep -> System goes only to IDLE
-		powerDisableMcuPdReq();
+	// start system
+	powerEnableRFC();
+	powerEnableAuxForceOn(); // ??????????????????????' not done in RTC interrupt
+	powerEnableCache(); // ?????  Wann notwendig ?? immer
 
 	int i = 8;
 
@@ -190,23 +186,31 @@ void sleep(){
 	SysCtrlAonUpdate();
 	SysCtrlAdjustRechargeAfterPowerDown();   	// AFTER POWER DOWN: Set refresh cycle
 	SysCtrlAonSync();
-
-
-
 }
 
 
 //===============================================================================
+void set_time(long value){
+	g_current_wake_up_time = value;
+}
+
 
 int main(void) {
 
   initSensortag();
 
+  // interrupt driven application
   while(1) {
 
+	g_current_wake_up_time = WAKE_INTERVAL_LOW_ENERGY;
+
+	// wait for interrupts
 	getData();
 	setData();
 	sendData();
     sleep();
   }
 }
+
+
+

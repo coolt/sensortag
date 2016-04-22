@@ -15,6 +15,8 @@
 #include "cc26xxware_2_22_00_16101/driverLib/aon_rtc.h"
 #include "cc26xxware_2_22_00_16101/driverLib/sys_ctrl.h"
 
+//int g_current_wake_up_time;
+
 // GPIO
 #include "cc26xxware_2_22_00_16101/driverLib/gpio.h" // Konstanten GPIO Pins
 #include "board.h" 								// Konstanten IO
@@ -42,35 +44,56 @@ void initInterrupts(void) { // alt: von dario
 
 void initRTCInterrupts(void) {
 
-	// RTC 0 = Wake up
-	// --------------------
+	AONRTCCombinedEventConfig(AON_RTC_CH0 | AON_RTC_CH2);  			// Set all used channels to Event-Fabric
+
+	// Ch 0: Wake up
+	// --------------
+	AONRTCCompareValueSet(AON_RTC_CH0, WAKE_INTERVAL_LOW_ENERGY); 	// Inital Wake up value  (= 10 s)
+	AONRTCChannelEnable(AON_RTC_CH0);								// Enable channel 0
+
+/*	// Ch 2: Speed Meausrement  -> init by calling
+	// -----------------------
+	AONRTCCompareValueSet(AON_RTC_CH2, WAKE_INTERVAL_MIDDLE_ENERGY);		// Set RTC ch2 initial compare value: erster Intrupt, der ausgelöst wird
+	AONRTCIncValueCh2Set(WAKE_INTERVAL_MIDDLE_ENERGY);						// Set RTC ch 2 auto increment: Nach welcher Zeit der zweite Interrupt ausgelöst wird
+	AONRTCModeCh2Set(AON_RTC_MODE_CH2_CONTINUOUS);					// Set RTC CH 2 to auto increment mode ??????
+	AONRTCChannelEnable(AON_RTC_CH2);								// Enable channel 2
+*/
+
+	//Set device to wake MCU from standby on RTC channel 2
+	//HWREG(AON_EVENT_BASE + AON_EVENT_O_MCUWUSEL) = AON_EVENT_MCUWUSEL_WU0_EV_RTC_CH2;
+
+	// Enable RTC
+	AONRTCEnable();
+}
 
 
-	// RTC 1 = Speed Measuring
-	//-------------------------
+/**
+ * \brief		This function is for using the RTC just for a short time
+ * 				to wake up the chip from standby.
+ * \param ms	wake up after time in milliseconds
+ */
+void start_RTC_speedMeasurement(uint32_t ms){
 
+	uint32_t compare_intervall = ms * 65536 / 1000; // ???  ????????????????????????????????????????????????????????????
+	uint32_t current_compare_value = 0;
+	uint32_t wake_compare_value = 0;
 
-	// here: old code from Wake up Dario
+	current_compare_value = AONRTCCurrentCompareValueGet();
+	wake_compare_value = current_compare_value + compare_intervall;
+
 	//Add RTC Ch2 event as input to AON RTC interrupt
 	AONRTCCombinedEventConfig(AON_RTC_CH2);
-
-			//Set RTC ch 2 auto increment
-			AONRTCIncValueCh2Set(0); // start value
-			//Set RTC ch2 initial compare value
-			int time = 0x0500; // = 5 s
-			AONRTCCompareValueSet(AON_RTC_CH2, time); //  = max 65'000 = 0xFFFE = 256 s
-			int temp = WAKE_INTERVAL_TICKS;
-			//Set RTC CH 2 to auto increment mode
-			AONRTCModeCh2Set(AON_RTC_MODE_CH2_CONTINUOUS);
-
+	//Set RTC ch2 initial compare value
+	AONRTCCompareValueSet(AON_RTC_CH2, wake_compare_value);
+	//Set RTC CH 2 to auto increment mode
+	AONRTCModeCh2Set(AON_RTC_MODE_CH2_NORMALCOMPARE);
 	//Enable channel 2
 	AONRTCChannelEnable(AON_RTC_CH2);
 	//Set device to wake MCU from standby on RTC channel 2
 	HWREG(AON_EVENT_BASE + AON_EVENT_O_MCUWUSEL) = AON_EVENT_MCUWUSEL_WU0_EV_RTC_CH2;
-
-	//Enable RTC
-	AONRTCEnable();
 }
+
+
 void initGPIOInterrupts(void){
 
 /*	// Button = BOARD_IOID_KEY_RIGHT= IOID_4, external interrupt on rising edge and wake up

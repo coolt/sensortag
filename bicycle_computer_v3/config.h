@@ -9,17 +9,24 @@
 #define IO_E  IOID_4
 
 // RTC wakeup interval
+// --------------------
 // Struktur 0x0000'0000		= obere 2 Byte [s], untere 2 Byte [ms]
 // Bsp.     0x0005'4000     = 5 s + 0.5 ms
-#define WAKE_INTERVAL_MS 0x00030000 // Nachladewert: Nach wie vielen s wieder ein Interrupt folgt
-#define WAKE_INTERVAL_TICKS 0x00050000  // erster Start eines Interrupts (danch Wiederholung nach Interrupt-Invertal-Zeit)
+
+#define WAKE_INTERVAL_LOW_ENERGY 	0x000A0000   	// 10 s
+#define WAKE_INTERVAL_MIDDLE_ENERGY 0x00030000 		//  3 s
+#define WAKE_INTERVAL_HIGH_ENERGY 	0x00010000		//  1 s
+
+extern long g_current_wake_up_time/* = WAKE_INTERVAL_HIGH_ENERGY*/;		// = max. = 256 s = 4.5 h
+
+
 
 // Advertisment payload length in bytes
 #define ADVLEN 10
 
 // RF-Chip needs some global variables
-extern char payload[ADVLEN]; 			// data buffer
+extern char payload[ADVLEN]; 						// data buffer
 
-extern volatile bool rfBootDone;			// communication flag
-extern volatile bool rfSetupDone;			// communication flag
-extern volatile bool rfAdvertisingDone;		// communication flag
+extern volatile bool rfBootDone;					// communication flag
+extern volatile bool rfSetupDone;					// communication flag
+extern volatile bool rfAdvertisingDone;				// communication flag

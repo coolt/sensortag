@@ -16,7 +16,7 @@
 // *********************************************
 // Includes for Hanlder
 //
-// ********************************
+// *********************************************
 
 #include <../inc/hw_types.h> 			//default
 #include "../../config.h"
@@ -37,7 +37,6 @@
 #include "../../board.h"
 #include "../driverLib/gpio.h"
 
-
 // RFC Handler
 #include "../inc/hw_rfc_dbell.h"
 #include "../inc/hw_rfc_pwr.h"
@@ -57,6 +56,8 @@
 volatile bool rfBootDone;
 volatile bool rfSetupDone;
 volatile bool rfAdvertisingDone;
+
+long g_current_wake_up_time;
 
 //*****************************************************************************
 //
@@ -195,23 +196,33 @@ void (* const g_pfnVectors[])(void) =
     TRNGIntHandler                          // TRNG event
 };
 
+//*****************************************************************************
+//
+// 2 active interrupt in RTC-handler:
+//
+// RTC0 = Wake up timer
+// RTC2 = Speed measuring
+//
+//*****************************************************************************
 
-//RTC interrupt handler
 void AONRTCIntHandler(void) {
-	  // Clear RTC event flag
 
-	if(AONRTCEventGet(AON_RTC_CH2)){
-		 do{
-		    AONRTCEventClear(AON_RTC_CH2);
-		  }
-		  while( AONRTCEventGet(AON_RTC_CH2));
-	}
+	// Wake up Timer
+	// --------------
 	if(AONRTCEventGet(AON_RTC_CH0)){
-		do{
-		     AONRTCEventClear(AON_RTC_CH0);
-		   }
-		   while( AONRTCEventGet(AON_RTC_CH0));
-		  AONRTCCompareValueSet(AON_RTC_CH0, AONRTCCompareValueGet(AON_RTC_CH0)+(WAKE_INTERVAL_TICKS));
+
+		AONRTCEventClear(AON_RTC_CH0);		 	// Clear RTC 0 event flag
+		AONRTCCompareValueSet(AON_RTC_CH0, AONRTCCompareValueGet(AON_RTC_CH0)+(g_current_wake_up_time));  // set new wake up time
+		//AONRTCCompareValueSet(AON_RTC_CH0, AONRTCCompareValueGet(AON_RTC_CH0)+(WAKE_INTERVAL_HIGH_ENERGY));  // set new wake up time
+
+
+	// Speed measurement Timer
+	// -----------------------
+	if(AONRTCEventGet(AON_RTC_CH2)){
+
+		AONRTCEventClear(AON_RTC_CH2);			 // Clear RTC 2 event flag
+
+	}
 	}
 }
 // interrupts -----------------------------------------------------------

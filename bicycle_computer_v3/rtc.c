@@ -9,69 +9,8 @@
 #include <driverLib/aon_rtc.h>
 #include <driverLib/sys_ctrl.h>
 
-void initRTC(void) { //dario
-	AONRTCCombinedEventConfig(AON_RTC_CH0 | AON_RTC_CH2);
 
 
-  //Add RTC Ch2 event as input to AON RTC interrupt
-  //AONRTCCombinedEventConfig(AON_RTC_CH2);
-  //Set RTC ch 2 auto increment
-  AONRTCIncValueCh2Set(WAKE_INTERVAL_TICKS);
-  //Set RTC ch2 initial compare value
-  AONRTCCompareValueSet(AON_RTC_CH2, WAKE_INTERVAL_TICKS);
-  //Set RTC CH 2 to auto increment mode
-  AONRTCModeCh2Set(AON_RTC_MODE_CH2_CONTINUOUS);
-  //Enable channel 2
-  AONRTCChannelEnable(AON_RTC_CH2);
-  //Set device to wake MCU from standby on RTC channel 2
-  //HWREG(AON_EVENT_BASE + AON_EVENT_O_MCUWUSEL) = AON_EVENT_MCUWUSEL_WU0_EV_RTC_CH2;
-
-
-  /*ch0**************************************************************************************/
-
-
-  //Set RTC ch2 initial compare value
-  AONRTCCompareValueSet(AON_RTC_CH0, WAKE_INTERVAL_TICKS/2);
-  //Set RTC CH 2 to auto increment mode
-  //AONRTCModeCh2Set(AON_RTC_MODE_CH2_CONTINUOUS);
-  //Enable channel 2
-  AONRTCChannelEnable(AON_RTC_CH0);
-  //Set device to wake MCU from standby on RTC channel 2
-  //HWREG(AON_EVENT_BASE + AON_EVENT_O_MCUWUSEL) = AON_EVENT_MCUWUSEL_WU0_EV_RTC_CH0;
-
-  /*********************************************************************************************/
-  //Enable RTC
-  AONRTCEnable();
-
-}
-
-
-
-/**  // new function from PA
- * \brief		This function is for using the RTC just for a short time
- * 				to wake up the chip from standby.
- * \param ms	wake up after time in milliseconds
- */
-void initRTC_WUms(uint32_t ms){
-
-	uint32_t compare_intervall = ms * 65536 / 1000;
-	uint32_t current_compare_value = 0;
-	uint32_t wake_compare_value = 0;
-
-	current_compare_value = AONRTCCurrentCompareValueGet();
-	wake_compare_value = current_compare_value + compare_intervall;
-
-	//Add RTC Ch2 event as input to AON RTC interrupt
-	AONRTCCombinedEventConfig(AON_RTC_CH2);
-	//Set RTC ch2 initial compare value
-	AONRTCCompareValueSet(AON_RTC_CH2, wake_compare_value);
-	//Set RTC CH 2 to auto increment mode
-	AONRTCModeCh2Set(AON_RTC_MODE_CH2_NORMALCOMPARE);
-	//Enable channel 2
-	AONRTCChannelEnable(AON_RTC_CH2);
-	//Set device to wake MCU from standby on RTC channel 2
-	HWREG(AON_EVENT_BASE + AON_EVENT_O_MCUWUSEL) = AON_EVENT_MCUWUSEL_WU0_EV_RTC_CH2;
-}
 
 
 
