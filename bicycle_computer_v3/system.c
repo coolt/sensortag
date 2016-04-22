@@ -15,40 +15,33 @@
 #include "cc26xxware_2_22_00_16101/driverLib/aon_rtc.h"
 #include "cc26xxware_2_22_00_16101/driverLib/sys_ctrl.h"
 
-//int g_current_wake_up_time;
 
 // GPIO
-#include "cc26xxware_2_22_00_16101/driverLib/gpio.h" // Konstanten GPIO Pins
-#include "board.h" 								// Konstanten IO
-#include "cc26xxware_2_22_00_16101/driverLib/ioc.h"  // Grundeinstellungen aktivieren domains
+#include "cc26xxware_2_22_00_16101/driverLib/gpio.h" 				// Konstanten GPIO Pins
+#include "board.h" 													// Konstanten IO
+#include "cc26xxware_2_22_00_16101/driverLib/ioc.h"  				// Grundeinstellungen aktivieren domains
 #include "cc26xxware_2_22_00_16101/inc/hw_aon_event.h"
 
 // RFC
 #include "radio.h"
 
-/*
-// Enable interrupt on CPU
-void initInterrupts(void) { // alt: von dario
-
-  // CPE1 - Int channels 31:16: Boot done is bit 30
-  HWREG(NVIC_EN0) = 1 << (INT_RF_CPE1 - 16);
-  // CPE0 - Int channels  15:0: CMD_DONE is bit 1, LAST_CMD_DONE is bit 0
-  HWREG(NVIC_EN0) = 1 << (INT_RF_CPE0 - 16);
-  // RTC combined event output
-  HWREG(NVIC_EN0) = 1 << (INT_AON_RTC - 16);
-
-  // Global interrupt enable
-  CPUcpsie();
-}
-*/
-
-void initRTCInterrupts(void) {
+void initWUCEvent(){
 
 	AONRTCCombinedEventConfig(AON_RTC_CH0 | AON_RTC_CH2);  			// Set all used channels to Event-Fabric
 
+	 // Set Interrupt to WUC. Wake MCU afther this Interrupts
+	 // WUC0 = RTC2
+	 // WUC1 = All GPIO
+	 // WUC2 = RTC0
+	 HWREG(AON_EVENT_BASE + AON_EVENT_O_MCUWUSEL) = AON_EVENT_MCUWUSEL_WU0_EV_RTC_CH2 | AON_EVENT_MCUWUSEL_WU1_EV_PAD | AON_EVENT_MCUWUSEL_WU2_EV_RTC_CH0 ;
+}
+
+
+void initRTCInterrupts(void) {
+
 	// Ch 0: Wake up
 	// --------------
-	AONRTCCompareValueSet(AON_RTC_CH0, WAKE_INTERVAL_HIGH_ENERGY); 	// Inital Wake up value  (= 10 s)
+	AONRTCCompareValueSet(AON_RTC_CH0, WAKE_INTERVAL_MIDDLE_ENERGY); 	// Inital Wake up value  (= 10 s)
 	AONRTCChannelEnable(AON_RTC_CH0);								// Enable channel 0
 
 /*	// Ch 2: Speed Meausrement  -> init by calling
@@ -59,19 +52,11 @@ void initRTCInterrupts(void) {
 	AONRTCChannelEnable(AON_RTC_CH2);								// Enable channel 2
 */
 
-	//Set device to wake MCU from standby on RTC channel 2
-	//HWREG(AON_EVENT_BASE + AON_EVENT_O_MCUWUSEL) = AON_EVENT_MCUWUSEL_WU0_EV_RTC_CH2;
-
 	// Enable RTC
 	AONRTCEnable();
 }
 
-
-/**
- * \brief		This function is for using the RTC just for a short time
- * 				to wake up the chip from standby.
- * \param ms	wake up after time in milliseconds
- */
+// set up RTC2 Interrupt s
 void start_RTC_speedMeasurement(uint32_t ms){
 
 	uint32_t compare_intervall = ms * 65536 / 1000; // ???  ????????????????????????????????????????????????????????????
@@ -81,87 +66,57 @@ void start_RTC_speedMeasurement(uint32_t ms){
 	current_compare_value = AONRTCCurrentCompareValueGet();
 	wake_compare_value = current_compare_value + compare_intervall;
 
-	//Add RTC Ch2 event as input to AON RTC interrupt
-	AONRTCCombinedEventConfig(AON_RTC_CH2);
 	//Set RTC ch2 initial compare value
 	AONRTCCompareValueSet(AON_RTC_CH2, wake_compare_value);
 	//Set RTC CH 2 to auto increment mode
 	AONRTCModeCh2Set(AON_RTC_MODE_CH2_NORMALCOMPARE);
+
 	//Enable channel 2
 	AONRTCChannelEnable(AON_RTC_CH2);
-	//Set device to wake MCU from standby on RTC channel 2
-	HWREG(AON_EVENT_BASE + AON_EVENT_O_MCUWUSEL) = AON_EVENT_MCUWUSEL_WU0_EV_RTC_CH2;
+
 }
 
 
 void initGPIOInterrupts(void){
 
-/*	// Button = BOARD_IOID_KEY_RIGHT= IOID_4, external interrupt on rising edge and wake up
-	IOCPortConfigureSet(BOARD_IOID_KEY_RIGHT, IOC_PORT_GPIO, IOC_IOMODE_NORMAL | IOC_FALLING_EDGE | IOC_INT_ENABLE | IOC_IOPULL_UP | IOC_INPUT_ENABLE | IOC_WAKE_ON_LOW);
-	HWREG(AON_EVENT_BASE + AON_EVENT_O_MCUWUSEL) = AON_EVENT_MCUWUSEL_WU0_EV_PAD;  //Set device to wake MCU from standby on all pins
-	// Does not work with AON_EVENT_MCUWUSEL_WU0_EV_PAD4, the specific pin for button
+	 // Config IOID4 for external interrupt on rising edge and wake up
+	 IOCPortConfigureSet(BOARD_IOID_KEY_RIGHT, IOC_PORT_GPIO, IOC_IOMODE_NORMAL | IOC_FALLING_EDGE | IOC_INT_ENABLE | IOC_IOPULL_UP | IOC_INPUT_ENABLE | IOC_WAKE_ON_LOW);
 
-	// REED_SWITCH = IOID_25, external interrupt on rising edge and wake up
+
+/*	// REED_SWITCH = IOID_25, external interrupt on rising edge and wake up
 	IOCPortConfigureSet(REED_SWITCH, IOC_PORT_GPIO, IOC_IOMODE_NORMAL | IOC_FALLING_EDGE | IOC_INT_ENABLE | IOC_IOPULL_UP | IOC_INPUT_ENABLE | IOC_WAKE_ON_LOW);
-	HWREG(AON_EVENT_BASE + AON_EVENT_O_MCUWUSEL) = AON_EVENT_MCUWUSEL_WU0_EV_PAD;  //Set device to wake MCU from standby from all pins
 
 	// BAT_LOW = IOID_28, external interrupt on rising edge and wake up
 	//IOCPortConfigureSet(BAT_LOW, IOC_PORT_GPIO, IOC_IOMODE_NORMAL | IOC_FALLING_EDGE | IOC_INT_ENABLE | IOC_IOPULL_UP | IOC_INPUT_ENABLE | IOC_WAKE_ON_LOW);
-	//HWREG(AON_EVENT_BASE + AON_EVENT_O_MCUWUSEL) = AON_EVENT_MCUWUSEL_WU0_EV_PAD;  //Set device to wake MCU from standby all pins
 */
-	/*
-	   * erstes Mail
-	   *  HWREG(AON_EVENT_BASE + AON_EVENT_O_MCUWUSEL) = AON_EVENT_MCUWUSEL_WU1_EV_PAD | AON_EVENT_MCUWUSEL_WU0_EV_RTC_CH2;  //Does not work with AON_EVENT_MCUWUSEL_WU0_EV_PAD4 --> WHY??
-	   */
-
-	  /*
-	   * Zweites Mail
-	   *   AONRTCIncValueCh2Set(WAKE_INTERVAL_TICKS);
-	   */
-
-	  //Config IOID4 for external interrupt on rising edge and wake up
-	 IOCPortConfigureSet(BOARD_IOID_KEY_RIGHT, IOC_PORT_GPIO, IOC_IOMODE_NORMAL | IOC_FALLING_EDGE | IOC_INT_ENABLE | IOC_IOPULL_UP | IOC_INPUT_ENABLE | IOC_WAKE_ON_LOW);
-	  //Set device to wake MCU from standby on PIN 4 (BUTTON1)
-	 HWREG(AON_EVENT_BASE + AON_EVENT_O_MCUWUSEL) = AON_EVENT_MCUWUSEL_WU1_EV_PAD | AON_EVENT_MCUWUSEL_WU2_EV_RTC_CH0 | AON_EVENT_MCUWUSEL_WU0_EV_RTC_CH2;  //Does not work with AON_EVENT_MCUWUSEL_WU0_EV_PAD4 --> WHY??
 }
 
-/*
-void initRadio(void) {
-  // Set radio to BLE mode
-  HWREG(PRCM_BASE + PRCM_O_RFCMODESEL) = 0x1;
-
-   //Set up MAC address. Currently using TI Provided adress
-   devAddress = *((uint64_t*)(FCFG1_BASE+FCFG1_O_MAC_BLE_0));
-
-  //Chain advertisment commands.
-  cmdAdv0.pNextOp = (uint8_t *)&cmdAdv1;
-  cmdAdv1.pNextOp = (uint8_t *)&cmdAdv2;
-  cmdAdv2.pNextOp = (uint8_t *)&cmdFsPd;
-}
-*/
 
 void initRFInterrupts(void) { // hiess vorher: initInterrupts
 
-   // RFCore (=CPE) Interrupts
-  // CPE1 - Int channels 31:16: Boot done is bit 30
-  HWREG(NVIC_EN0) = 1 << (INT_RF_CPE1 - 16);
-  // CPE0 - Int channels  15:0: CMD_DONE is bit 1, LAST_CMD_DONE is bit 0
-  HWREG(NVIC_EN0) = 1 << (INT_RF_CPE0 - 16);
-  // RTC combined event output
-  HWREG(NVIC_EN0) = 1 << (INT_AON_RTC - 16);
+	// RFCore (=CPE) Interrupts
+	// CPE1 - Int channels 31:16: Boot done is bit 30
+	HWREG(NVIC_EN0) = 1 << (INT_RF_CPE1 - 16);
+	// CPE0 - Int channels  15:0: CMD_DONE is bit 1, LAST_CMD_DONE is bit 0
+	HWREG(NVIC_EN0) = 1 << (INT_RF_CPE0 - 16);
+	// RTC combined event output
+	HWREG(NVIC_EN0) = 1 << (INT_AON_RTC - 16);
 
-  // RFC Int enable: (baek, temporary) See rfc.h
-  // RFCCpe0IntEnable(uint32_t ui32Mask);   // Enable CPE0 Interrupt
+	// RFC Int enable: (baek, temporary) See rfc.h
+	// RFCCpe0IntEnable(uint32_t ui32Mask);   // Enable CPE0 Interrupt
 }
 
-void ledInit(void)
-{
-	IOCPinTypeGpioOutput(BOARD_IOID_LED_1); //LED1
-	IOCPinTypeGpioOutput(BOARD_IOID_LED_2); //LED2
+// **********************************************************************************************
 
-	GPIOPinClear(BOARD_LED_1);
-	GPIOPinClear(BOARD_LED_2);
+long getEnergyStateFromSPI(void){
+
+	g_current_energy_state = HIGH_ENERGY;
+
+	return g_current_energy_state;
+
 }
+
+// **********************************************************************************************
 
 void sensorsInit(void)
 {
@@ -189,10 +144,19 @@ void sensorsInit(void)
 	while((PRCMPowerDomainStatus(PRCM_DOMAIN_SERIAL) != PRCM_DOMAIN_POWER_OFF));
 
 	//Shut down I2C
-	board_i2c_shutdown();
+	// board_i2c_shutdown();
 }
 
+void ledInit(void)
+{
+	IOCPinTypeGpioOutput(BOARD_IOID_LED_1); //LED1
+	IOCPinTypeGpioOutput(BOARD_IOID_LED_2); //LED2
 
+	GPIOPinClear(BOARD_LED_1);
+	GPIOPinClear(BOARD_LED_2);
+}
+
+// **********************************************************************************************
 
 void powerEnableAuxForceOn(void) {
   HWREGBITW(AON_WUC_BASE + AON_WUC_O_AUXCTL,AON_WUC_AUXCTL_AUX_FORCE_ON_BITN)=1;

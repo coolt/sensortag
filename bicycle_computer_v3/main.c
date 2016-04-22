@@ -1,7 +1,8 @@
 /**
  V3:
+ * Energy mode und wake up time manully set. (see getdata() )
+ *
  */
-// #include "interfaces/board-i2c.h"
 
 
 // Set up
@@ -41,8 +42,10 @@ volatile bool rfAdvertisingDone;
 
 char payload[ADVLEN];
 
-
+// ------------------------------
 // functions
+// ------------------------------
+
 void initSensortag(void){
 
 		// power off
@@ -62,6 +65,7 @@ void initSensortag(void){
 		ledInit();
 
 		// Configure Interrupts
+		initWUCEvent();											// Ch0 = RTC2, Ch1 = all GPIO, Ch2 = RTC0
 		initRTCInterrupts();		// Ziel						// CH0: WakeUp, CH2: Speed calculation
 		initGPIOInterrupts();									// Define IOPorts for Interrupt, Add GPIO-mask to WU-Event
 		initRFInterrupts(); 									// Set RFInterrupts to NVIC
@@ -99,8 +103,7 @@ void getData(void){
 
 	// read STS, LTS to know Energy state
 	// ----------------------------------
-	// g_current_energy_state = getEnergyStateFromSPI();
-	g_current_energy_state = LOW_ENERGY; 															// TO DEL
+	g_current_energy_state = getEnergyStateFromSPI();
 	updateRTCWakeUpTime(g_current_energy_state);
 
 	// measure speed
@@ -112,15 +115,11 @@ void getData(void){
 }
 void setData(void){
 
-	// to app: 62 bytes (Daten auf 37 bytes)
-	// ADVLen = 37 Databytes (inkl. length)
+	memset(payload, 0, ADVLEN); // Clear payload buffer
 
-	memset(payload, 0, ADVLEN); // Clear payload buffer  //DOES NOT WORK !!!!!!!!!!
-
-	//Fill payload buffer with adv parameter data = ADV DATA
-	// immer 2 bytes, weil UUID als Type
-	// see ADV structure
-
+	// Payload buffer = ADV DATA in ADV structure
+	// BLE-Packet = 62 bytes, therefore 37 bytes of data (in payloadbuffer)
+	// --------------------------------------------------------------------
 	payload[0] = ADVLEN - 1; 		// length = ADV-Length - 1 (1 Byte)
 
 	payload[1] = 0x03; 				// Type (1 Byte)  =>   0x03 = UUID -> immer 2 Bytes
