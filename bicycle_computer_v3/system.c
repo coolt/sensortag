@@ -38,9 +38,14 @@ void initWUCEvent(){
 
 	 // Set Interrupt to WUC. Wake MCU afther this Interrupts
 	 // WUC0 = RTC0  (wake up sleep)
-	 // WUC1 = All GPIO
+	 // WUC1 = All GPIO  (PAD25 => Reed), nur PAD = alle
 	 // WUC2 = RTC2  (speed measuring)
-	 HWREG(AON_EVENT_BASE + AON_EVENT_O_MCUWUSEL) = AON_EVENT_MCUWUSEL_WU0_EV_RTC_CH0 | AON_EVENT_MCUWUSEL_WU1_EV_PAD | AON_EVENT_MCUWUSEL_WU2_EV_RTC_CH2 ;
+	 // WUC3 = Button
+
+	 //  alle GPIO: HWREG(AON_EVENT_BASE + AON_EVENT_O_MCUWUSEL) = AON_EVENT_MCUWUSEL_WU0_EV_RTC_CH0 | AON_EVENT_MCUWUSEL_WU1_EV_PAD | AON_EVENT_MCUWUSEL_WU2_EV_RTC_CH2 ;
+	// nur reed GPIO (pad25) auf ch 1
+	HWREG(AON_EVENT_BASE + AON_EVENT_O_MCUWUSEL) = (AON_EVENT_MCUWUSEL_WU0_EV_RTC_CH0 | AON_EVENT_MCUWUSEL_WU1_EV_PAD25 | AON_EVENT_MCUWUSEL_WU2_EV_RTC_CH2 | AON_EVENT_MCUWUSEL_WU3_EV_PAD ) ;
+
 }
 
 
@@ -80,16 +85,17 @@ void start_RTC_speedMeasurement(uint32_t ms){
 	AONRTCChannelEnable(AON_RTC_CH2);
 
 }
-
-
-void initGPIOInterrupts(void){
+void initButtonInterrupts(void){
 
 	 // Config IOID4 for external interrupt on rising edge and wake up
 	 IOCPortConfigureSet(BOARD_IOID_KEY_RIGHT, IOC_PORT_GPIO, IOC_IOMODE_NORMAL | IOC_FALLING_EDGE | IOC_INT_ENABLE | IOC_IOPULL_UP | IOC_INPUT_ENABLE | IOC_WAKE_ON_LOW);
+}
 
+void initGPIOInterrupts(void){
 
 	// REED_SWITCH = IOID_25, external interrupt on rising edge and wake up
 	IOCPortConfigureSet(REED_SWITCH, IOC_PORT_GPIO, IOC_IOMODE_NORMAL | IOC_FALLING_EDGE | IOC_INT_ENABLE | IOC_IOPULL_UP | IOC_INPUT_ENABLE | IOC_WAKE_ON_LOW);
+
 
 	// BAT_LOW = IOID_28, external interrupt on rising edge and wake up
 	//IOCPortConfigureSet(BAT_LOW, IOC_PORT_GPIO, IOC_IOMODE_NORMAL | IOC_FALLING_EDGE | IOC_INT_ENABLE | IOC_IOPULL_UP | IOC_INPUT_ENABLE | IOC_WAKE_ON_LOW);
@@ -118,57 +124,112 @@ void initRFInterrupts(void) { // hiess vorher: initInterrupts
 
 /**
  * read twice reed switch out
- * don't leave function, until both values are get
+ * don't leave function, until both values are get -> set function to sleep which is equals to wait for next int.
  */
-int readCycle(void){
+void getCycleTimeFromInterrupt(void){
 
-	int cycle = 0;
-	int nmbr_cycles = 0;
+//extPinEnable
+	// Power on IOC domain
+	powerEnablePeriph();
+	powerEnableGPIOClockRunMode();
+
+	/* Wait for domains to power on */
+	while((PRCMPowerDomainStatus(PRCM_DOMAIN_PERIPH)
+			!= PRCM_DOMAIN_POWER_ON));
 
 	// interrupts for reed- pin enabled, domain powered on
 	// ---------------------------------------------------
-			// Enable PIN25 for Interrupts
-			// IOCPortConfigureSet(BOARD_IOID_DP0, IOC_PORT_GPIO, IOC_IOMODE_NORMAL | IOC_RISING_EDGE | IOC_INT_ENABLE | IOC_IOPULL_DOWN  | IOC_INPUT_ENABLE | IOC_WAKE_ON_HIGH);
-			//Set device to wake MCU from standby on PIN 25
-			// HWREG(AON_EVENT_BASE + AON_EVENT_O_MCUWUSEL) = AON_EVENT_MCUWUSEL_WU1_EV_PAD25;
 
-	// Enable and clear the Interrupt
-	IOCIntClear(IOID_25);
+	// Enable and clear the Interrupt on MCU
+	IOCIntClear(IOID_25);   					// Reed interrupt
 	IntPendClear(INT_EDGE_DETECT);
-	IntEnable(INT_EDGE_DETECT);
+	IntEnable(INT_EDGE_DETECT);					// GPIO-Handler is active: In ISR() time-values are set
 
-    do{
-    	int i = 2;
-    	nmbr_cycles ++;
+	// Power off IOC domain
+	powerDisablePeriph();
+	// Disable clock for GPIO in CPU run mode
+	HWREGBITW(PRCM_BASE + PRCM_O_GPIOCLKGR, PRCM_GPIOCLKGR_CLK_EN_BITN) = 0;
+	// Load clock settings
+	HWREGBITW(PRCM_BASE + PRCM_O_CLKLOADCTL, PRCM_CLKLOADCTL_LOAD_BITN) = 1;
+//end
 
-    }while(nmbr_cycles < 2);
+
+	// power down								// for waiting vor next interrupt
+	powerDisableAuxForceOn();					// Allow AUX to turn off again. No longer need oscillator interface
+	powerDisableCache();						// Disable cache and retention
+	powerDisableCacheRetention();
+	SysCtrlAonSync();							// Synchronize transactions to AON domain to ensure AUX has turned off
+	// Enter IDLE
+	powerDisableCPU();
+	PRCMDeepSleep();
 
 
-	// Disable PIN25 for Interrupts
-	// IOCPortConfigureSet(BOARD_IOID_DP0, IOC_PORT_GPIO, IOC_IOMODE_NORMAL | IOC_RISING_EDGE | IOC_INT_DISABLE | IOC_IOPULL_DOWN  | IOC_INPUT_ENABLE | IOC_WAKE_ON_HIGH);
-	// Clear device to wake MCU from standby on PIN 25
+	// Wake up from 1. Extern Interrupt  -> value time 1 is set
+
+	// Enter IDLE
+	powerDisableCPU();
+	PRCMDeepSleep();
+
+	// Wake up from 2. Extern Interrupt -> value time 2 is set
+
+	// power on
+	powerEnableAuxForceOn();
+	powerEnableCache();						//Re-enable cache and retention
+	powerEnableCacheRetention();
+	waitUntilAUXReady();					//Wait until AUX is ready before configuring oscillators
+	powerDisableMcuPdReq();					//MCU will not request to be powered down on DeepSleep -> System goes only to IDLE
+
+//extPinDisable
+	// Power on IOC domain
+	powerEnablePeriph();
+	powerEnableGPIOClockRunMode();
+
+	/* Wait for domains to power on */
+	while((PRCMPowerDomainStatus(PRCM_DOMAIN_PERIPH)
+			!= PRCM_DOMAIN_POWER_ON));
+
+	// Disable DP0 = 0x19 for Interrupts
+	//IOCPortConfigureSet(BOARD_IOID_DP4, IOC_PORT_GPIO, IOC_IOMODE_NORMAL | IOC_RISING_EDGE | IOC_INT_DISABLE | IOC_IOPULL_DOWN  | IOC_INPUT_ENABLE | IOC_WAKE_ON_HIGH);
+	// Clear all GPIO events on channel 1
 	// HWREG(AON_EVENT_BASE + AON_EVENT_O_MCUWUSEL) = AON_EVENT_MCUWUSEL_WU1_EV_NONE;
 
 	// Disable all GPIO Interrupt
-	// IntDisable(INT_EDGE_DETECT); // -> in main
+	IntDisable(INT_EDGE_DETECT); 		// -> in main
 
-	return cycle;
-}
-
-void reedInterruptOnOff(bool enable){
-
-
-
-
-	if(enable){
+	// Power off IOC domain
+	powerDisablePeriph();
+	// Disable clock for GPIO in CPU run mode
+	HWREGBITW(PRCM_BASE + PRCM_O_GPIOCLKGR, PRCM_GPIOCLKGR_CLK_EN_BITN) = 0;
+	// Load clock settings
+	HWREGBITW(PRCM_BASE + PRCM_O_CLKLOADCTL, PRCM_CLKLOADCTL_LOAD_BITN) = 1;
+// end
 
 
+    // calculation
+	// ---------------
+    g_measurement_done = false;
 
-	}
-	else{
+	// calculate Time of Wheel  (values set in isr)
+	g_time1 = g_time1 >> 16;
+	g_time2 = g_time2 >> 16;
+	// difference of the 2 timestamps
+	g_timeDiff = g_time2 - g_time1;
 
-	}
+	// If an overflow of the counter occured - this doesnt matter
+	g_timeDiff = g_timeDiff & 0xFFFF;
+	// from s to ms
+	g_time_float = g_timeDiff * 1000;
+	// calculate the time to ms
+	g_time_ms = g_time_float / 65535.0;
+	g_timeDiff = (uint32_t)(g_time_ms);
 
+	// Reset Timevalues for the right function of GPIO-Interrupt
+	g_time1 = 0;
+	g_time2 = 0;
+
+
+	// Disable RTC
+	AONRTCDisable();      // -> main
 
 }
 

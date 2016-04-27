@@ -218,7 +218,7 @@ void AONRTCIntHandler(void) {
 		AONRTCEventClear(AON_RTC_CH0);		 	// Clear RTC 0 event flag
 		AONRTCCompareValueSet(AON_RTC_CH0, AONRTCCompareValueGet(AON_RTC_CH0)+(g_current_wake_up_time));  // set new wake up time
 		//AONRTCCompareValueSet(AON_RTC_CH0, AONRTCCompareValueGet(AON_RTC_CH0)+(WAKE_INTERVAL_HIGH_ENERGY));  // set new wake up time
-
+	}
 
 	// Speed measurement Timer
 	// -----------------------
@@ -226,7 +226,6 @@ void AONRTCIntHandler(void) {
 
 		AONRTCEventClear(AON_RTC_CH2);			 // Clear RTC 2 event flag
 
-	}
 	}
 }
 
@@ -249,11 +248,26 @@ void GPIOIntHandler(void){
 	// wait because Edge is bouncing for approx. 3 ms
 	CPUdelay(20000); // 30 ms (to be safe, take a big value)
 
-	// Handling
 
+	// Handling
+    // -------------------------------------------------------------------------------------
 	/* Read interrupt flags */
 	pin_mask = (HWREG(GPIO_BASE + GPIO_O_EVFLAGS31_0) & GPIO_PIN_MASK);
 
+	// Button ??
+	if(IOCIntStatus(IOID_4)){
+			IOCIntClear(IOID_4);
+	}
+
+	// Generell GPIO  ??
+	if(IOCIntStatus(IOID_16)){
+		IOCIntClear(IOID_16);
+	}
+
+
+
+	// Reed: "IOID 25" => MCU DIO 25,  Board_IOID_DP0
+	// "IOID 25" is number in IOC-modul
 // new
 	// Interrupt of PAD25 - clear it
 		if(IOCIntStatus(IOID_25)){
@@ -274,13 +288,13 @@ void GPIOIntHandler(void){
 	/* Clear the interrupt flags */
 	HWREG(GPIO_BASE + GPIO_O_EVFLAGS31_0) = pin_mask;
 
-
+/*
 	powerDisablePeriph();
 	// Disable clock for GPIO in CPU run mode
 	HWREGBITW(PRCM_BASE + PRCM_O_GPIOCLKGR, PRCM_GPIOCLKGR_CLK_EN_BITN) = 0;
 	// Load clock settings
 	HWREGBITW(PRCM_BASE + PRCM_O_CLKLOADCTL, PRCM_CLKLOADCTL_LOAD_BITN) = 1;
-
+*/
 	//To avoid second interupt with register = 0 (its not fast enough!!)
 	__asm(" nop");
 	__asm(" nop");

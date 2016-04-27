@@ -9,8 +9,7 @@ void initGPIOInterrupts(void);
 void initRFInterrupts(void);
 
 // Interrupt-Function
-int readCycle(void);
-// void reedInterruptOnOff(bool enable);
+void getCycleTimeFromInterrupt(void);
 void start_RTC_speedMeasurement(uint32_t ms); 	// setRTC0  (can not be initalized)
 long getEnergyStateFromSPI(void);
 

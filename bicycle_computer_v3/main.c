@@ -40,6 +40,10 @@ volatile bool rfBootDone;
 volatile bool rfSetupDone;
 volatile bool rfAdvertisingDone;
 
+uint32_t g_time1 = 0, g_time2 = 0, g_timeDiff = 0;
+bool g_measurement_done = false;
+float g_time_ms = 0, g_time_float = 0;
+
 char payload[ADVLEN];
 
 // ------------------------------
@@ -65,9 +69,10 @@ void initSensortag(void){
 		ledInit();
 
 		// Configure Interrupts
-		initWUCEvent();											// Ch0 = RTC0 (wake up), Ch1 = all GPIO, Ch2 = RTC2 (speed)
+		initWUCEvent();											// Ch0 = RTC0 (wake up), Ch1 = all GPIO, Ch2 = RTC2 (speed), Ch3 = Button
 		initRTCInterrupts();									// Set up RTC-Interrupts
 		initGPIOInterrupts();									// Define IOPorts for Interrupt
+		initButtonInterrupts();
 		initRFInterrupts(); 									// Set RFInterrupts to NVIC
 		CPUcpsie();												// All extern interrupts enable
 
@@ -93,10 +98,9 @@ void getData(void){
 
 	// Wakeup from RTC according to energy-state
 	// ---------------------------------------------
-	AONRTCChannelDisable(AON_RTC_CH0);							// wake up timer
+	AONRTCChannelDisable(AON_RTC_CH0);							// disable wake up timer
 
 	// start system
-	powerEnableRFC();											// ????  (erst nächste Funktion)
 	powerEnableAuxForceOn(); 									// ??????????????????????' not done in RTC interrupt ??
 	powerEnableCache(); 										// ?????  erst nächste Funktion Wann notwendig ?? immer
 
@@ -113,12 +117,12 @@ void getData(void){
 	// measure speed
 	// -------------
 	AONRTCChannelEnable(AON_RTC_CH2);							// speed timer
-	int cycle = readCycle();	//  -> Funktion erste verlassen, wenn beide Werte ausgelesen sind	// clear intrupt flag  !!!!
+	getCycleTimeFromInterrupt();							    // set up Pin 19 interrupt, go sleep, wake up (value set in ISR()), sleep, wake up (2. value set in ISR());
 
 
 	// Disable GPIO-and RTC-CH2-Interrupt
-	IntDisable(INT_EDGE_DETECT);								// Disable all GPIO-interrupts
-	disabeleGPIODomain();
+	//IntDisable(INT_EDGE_DETECT);								// Disable all GPIO-interrupts
+	//disabeleGPIODomain();
 	AONRTCChannelDisable(AON_RTC_CH2);
 
 	// calculate velocity
@@ -129,6 +133,9 @@ void getData(void){
 
 }
 void setData(void){
+
+	powerEnableRFC();											// ????  (erst nächste Funktion)
+
 
 	memset(payload, 0, ADVLEN); // Clear payload buffer
 
@@ -246,7 +253,7 @@ int main(void) {
   while(1) {
 
 	// wait for RTC0-Interrupt
-	getData();
+	getData();								// energy state, speed and sensor
 	setData();
 	sendData();								// set RTC0-Interrupt
     sleep();
