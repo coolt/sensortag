@@ -28,12 +28,17 @@ extern long g_current_wake_up_time/* = WAKE_INTERVAL_HIGH_ENERGY*/;		// = max. =
 extern long g_current_energy_state;
 
 
-// Length of Data-Block (inclusive length, type, uuid)
+//* Length of Data-Block (inclusive length, type, uuid)
 #define ADVLEN 16
 
-// RF-Chip needs some global variables
+//* RF-Chip needs some global variables
 extern char payload[ADVLEN]; 						// data buffer
 
 extern volatile bool rfBootDone;					// communication flag
 extern volatile bool rfSetupDone;					// communication flag
 extern volatile bool rfAdvertisingDone;				// communication flag
+
+//* speed measurement
+extern uint32_t time1, time2, timeDiff;
+extern bool meas_done, first, int_enable;
+//extern uint32_t test;

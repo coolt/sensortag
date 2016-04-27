@@ -65,16 +65,14 @@ void initSensortag(void){
 		ledInit();
 
 		// Configure Interrupts
-		initWUCEvent();											// Ch0 = RTC2, Ch1 = all GPIO, Ch2 = RTC0
-		initRTCInterrupts();		// Ziel						// CH0: WakeUp, CH2: Speed calculation
-		initGPIOInterrupts();									// Define IOPorts for Interrupt, Add GPIO-mask to WU-Event
+		initWUCEvent();											// Ch0 = RTC0 (wake up), Ch1 = all GPIO, Ch2 = RTC2 (speed)
+		initRTCInterrupts();									// Set up RTC-Interrupts
+		initGPIOInterrupts();									// Define IOPorts for Interrupt
 		initRFInterrupts(); 									// Set RFInterrupts to NVIC
-		CPUcpsie();												// All extern interrupts enable (globaly)
+		CPUcpsie();												// All extern interrupts enable
 
-		// Setup for next state
-		IntEnable(INT_EDGE_DETECT); // Dario
-//		IntDisable(INT_EDGE_DETECT);							// Enable specific interrupt. Int_EDGE_DETECT = Nr. 16  (=> all GPIO-interrupts   ?? )
-//		AONRTCEnable();											// PA: Enable RTC
+		// Setup for next state									// only RTC0 (wake up) must be enabled
+		AONRTCChannelEnable(AON_RTC_CH0);
 
 		// power off and set Refresh on
 		// -- moved functions from in the middle of interrupt settings
@@ -93,6 +91,8 @@ void initSensortag(void){
 
 void getData(void){
 
+	// enable RTC-Interupt
+
 	// Wakeup from RTC according to energy-state
 	// ---------------------------------------------
 
@@ -100,6 +100,9 @@ void getData(void){
 	powerEnableRFC();
 	powerEnableAuxForceOn(); // ??????????????????????' not done in RTC interrupt ??
 	powerEnableCache(); // ?????  Wann notwendig ?? immer
+
+	//
+
 
 	// read STS, LTS to know Energy state
 	// ----------------------------------

@@ -49,15 +49,19 @@
 #include "../driverLib/prcm.h"
 #include "../../radio.h"
 #include "../../system.h"
-#include "../../config.h"  // set global variables
+#include "../../config.h"  //* set global variables
 
 
-// globale variables: declared in main. used here and in radio.c
+//* globale variables: declared in main. used here and in radio.c
 volatile bool rfBootDone;
 volatile bool rfSetupDone;
 volatile bool rfAdvertisingDone;
 
 long g_current_wake_up_time;
+
+uint32_t time1, time2, timeDiff;
+bool meas_done, first, int_enable;
+uint32_t test;
 
 //*****************************************************************************
 //

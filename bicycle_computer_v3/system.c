@@ -25,15 +25,22 @@
 // RFC
 #include "radio.h"
 
+/**
+ * Enable all used Wake up Interrupts
+ *
+ * @note: GPIO mask for active interrupts is to add to channel 1
+ *        Here: ALL GPIO pins are enabled.
+ */
 void initWUCEvent(){
 
-	AONRTCCombinedEventConfig(AON_RTC_CH0 | AON_RTC_CH2);  			// Set all used channels to Event-Fabric
+	// RTC combination
+	AONRTCCombinedEventConfig(AON_RTC_CH0 | AON_RTC_CH2 );  			// Set all used channels to Event-Fabric
 
 	 // Set Interrupt to WUC. Wake MCU afther this Interrupts
-	 // WUC0 = RTC2
+	 // WUC0 = RTC0  (wake up sleep)
 	 // WUC1 = All GPIO
-	 // WUC2 = RTC0
-	 HWREG(AON_EVENT_BASE + AON_EVENT_O_MCUWUSEL) = AON_EVENT_MCUWUSEL_WU0_EV_RTC_CH2 | AON_EVENT_MCUWUSEL_WU1_EV_PAD | AON_EVENT_MCUWUSEL_WU2_EV_RTC_CH0 ;
+	 // WUC2 = RTC2  (speed measuring)
+	 HWREG(AON_EVENT_BASE + AON_EVENT_O_MCUWUSEL) = AON_EVENT_MCUWUSEL_WU0_EV_RTC_CH0 | AON_EVENT_MCUWUSEL_WU1_EV_PAD | AON_EVENT_MCUWUSEL_WU2_EV_RTC_CH2 ;
 }
 
 
@@ -41,8 +48,8 @@ void initRTCInterrupts(void) {
 
 	// Ch 0: Wake up
 	// --------------
-	AONRTCCompareValueSet(AON_RTC_CH0, WAKE_INTERVAL_MIDDLE_ENERGY); 	// Inital Wake up value  (= 10 s)
-	AONRTCChannelEnable(AON_RTC_CH0);								// Enable channel 0
+	AONRTCCompareValueSet(AON_RTC_CH0, WAKE_INTERVAL_MIDDLE_ENERGY); 	// Inital Wake up value  (= 3 s, MIDDLE ENERGY)
+	AONRTCChannelEnable(AON_RTC_CH0);									// Enable channel 0
 
 /*	// Ch 2: Speed Meausrement  -> init by calling
 	// -----------------------
@@ -52,8 +59,6 @@ void initRTCInterrupts(void) {
 	AONRTCChannelEnable(AON_RTC_CH2);								// Enable channel 2
 */
 
-	// Enable RTC
-	AONRTCEnable();
 }
 
 // set up RTC2 Interrupt s
@@ -83,12 +88,12 @@ void initGPIOInterrupts(void){
 	 IOCPortConfigureSet(BOARD_IOID_KEY_RIGHT, IOC_PORT_GPIO, IOC_IOMODE_NORMAL | IOC_FALLING_EDGE | IOC_INT_ENABLE | IOC_IOPULL_UP | IOC_INPUT_ENABLE | IOC_WAKE_ON_LOW);
 
 
-/*	// REED_SWITCH = IOID_25, external interrupt on rising edge and wake up
+	// REED_SWITCH = IOID_25, external interrupt on rising edge and wake up
 	IOCPortConfigureSet(REED_SWITCH, IOC_PORT_GPIO, IOC_IOMODE_NORMAL | IOC_FALLING_EDGE | IOC_INT_ENABLE | IOC_IOPULL_UP | IOC_INPUT_ENABLE | IOC_WAKE_ON_LOW);
 
 	// BAT_LOW = IOID_28, external interrupt on rising edge and wake up
 	//IOCPortConfigureSet(BAT_LOW, IOC_PORT_GPIO, IOC_IOMODE_NORMAL | IOC_FALLING_EDGE | IOC_INT_ENABLE | IOC_IOPULL_UP | IOC_INPUT_ENABLE | IOC_WAKE_ON_LOW);
-*/
+
 }
 
 
@@ -155,7 +160,7 @@ void reedInterruptOnOff(bool enable){
 
 long getEnergyStateFromSPI(void){
 
-	g_current_energy_state = MIDDLE_ENERGY;
+	g_current_energy_state = LOW_ENERGY;
 
 	return g_current_energy_state;
 
