@@ -91,7 +91,6 @@ void initSensortag(void){
 
 void getData(void){
 
-	// enable RTC-Interupt
 
 	// Wakeup from RTC according to energy-state
 	// ---------------------------------------------
@@ -228,12 +227,12 @@ void sleep(){
 
 int main(void) {
 
-  initSensortag();
+  initSensortag(); 							// only RTC0-Interrupt (wake up) is active
 
   // interrupt driven application
   while(1) {
 
-	// wait for interrupts
+	// wait for RTC0-Interrupt
 	getData();
 	setData();
 	sendData();
