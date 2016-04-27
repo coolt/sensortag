@@ -71,11 +71,11 @@ void initSensortag(void){
 		initRFInterrupts(); 									// Set RFInterrupts to NVIC
 		CPUcpsie();												// All extern interrupts enable
 
-		// Setup for next state									// only RTC0 (wake up) must be enabled
-		AONRTCChannelEnable(AON_RTC_CH0);
+		// Setup for next state
+		AONRTCEnable();
+		AONRTCChannelDisable(AON_RTC_CH2);						// only RTC0 (wake up) must be enabled
 
-		// power off and set Refresh on
-		// -- moved functions from in the middle of interrupt settings
+		// power off and set Refresh on							// moved functions from in the middle of interrupt settings
 		powerDisablePeriph(); //Disable clock for GPIO in CPU run mode
 		HWREGBITW(PRCM_BASE + PRCM_O_GPIOCLKGR, PRCM_GPIOCLKGR_CLK_EN_BITN) = 0;
 		HWREGBITW(PRCM_BASE + PRCM_O_CLKLOADCTL, PRCM_CLKLOADCTL_LOAD_BITN) = 1; // Load clock settings
@@ -91,29 +91,37 @@ void initSensortag(void){
 
 void getData(void){
 
-
 	// Wakeup from RTC according to energy-state
 	// ---------------------------------------------
+	// AONRTCDisable();
+	AONRTCChannelDisable(AON_RTC_CH0);
 
 	// start system
 	powerEnableRFC();
-	powerEnableAuxForceOn(); // ??????????????????????' not done in RTC interrupt ??
-	powerEnableCache(); // ?????  Wann notwendig ?? immer
-
-	//
+	powerEnableAuxForceOn(); 									// ??????????????????????' not done in RTC interrupt ??
+	powerEnableCache(); 										// ?????  Wann notwendig ?? immer
 
 
 	// read STS, LTS to know Energy state
 	// ----------------------------------
+	IntEnable(INT_EDGE_DETECT);									// activates GPIO-Interrupts. Int_EDGE_DETECT = Int Nr. 16  (=> all GPIO-interrupts)
 	g_current_energy_state = getEnergyStateFromSPI();
 	updateRTCWakeUpTime(g_current_energy_state);
 
+
+
 	// measure speed
 	// -------------
-	//reedInterruptOnOff(true);			// clear intrupt flag  !!!!
+	AONRTCChannelEnable(AON_RTC_CH2);
+	//reedInterruptOnOff(true);	-> Funktion erste verlassen, wenn beide Werte ausgelesen sind	// clear intrupt flag  !!!!
+	IntDisable(INT_EDGE_DETECT);							// Disable all GPIO-interrupts
+	AONRTCChannelDisable(AON_RTC_CH2);
 
 	// calculate velocity
 	// ------------------
+
+
+	// power system down
 
 }
 void setData(void){
@@ -194,7 +202,9 @@ void sendData(){
 	radioCmdBusRequest(false);					// Request radio to not force on system bus any more
 
 	RFCAckIntClear(); 	// add baek.			// clear RFC Interrupts
-	AONRTCEnable();		// add baek. 			// defined interrupt state for next state
+
+	// AONRTCEnable(); 							// Wake up from sleep depending on energy state
+	AONRTCChannelEnable(AON_RTC_CH0);
 }
 
 
@@ -227,15 +237,14 @@ void sleep(){
 
 int main(void) {
 
-  initSensortag(); 							// only RTC0-Interrupt (wake up) is active
+  initSensortag(); 							// set RTC0-Interrupt (wake up)
 
-  // interrupt driven application
   while(1) {
 
 	// wait for RTC0-Interrupt
 	getData();
 	setData();
-	sendData();
+	sendData();								// set RTC0-Interrupt
     sleep();
   }
 }

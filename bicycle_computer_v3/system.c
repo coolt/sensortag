@@ -113,6 +113,10 @@ void initRFInterrupts(void) { // hiess vorher: initInterrupts
 
 // **********************************************************************************************
 
+/**
+ * read twice reed switch out
+ * don't leave function, until both values are get
+ */
 void reedInterruptOnOff(bool enable){
 
 	// Power on IOC domain
@@ -155,9 +159,9 @@ void reedInterruptOnOff(bool enable){
 
 
 
-
-
-
+/**
+ * GPIO is generally activated
+ */
 long getEnergyStateFromSPI(void){
 
 	g_current_energy_state = LOW_ENERGY;
