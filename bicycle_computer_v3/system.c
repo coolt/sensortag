@@ -111,60 +111,103 @@ void initRFInterrupts(void) { // hiess vorher: initInterrupts
 	// RFCCpe0IntEnable(uint32_t ui32Mask);   // Enable CPE0 Interrupt
 }
 
+
+
+
 // **********************************************************************************************
 
 /**
  * read twice reed switch out
  * don't leave function, until both values are get
  */
+int readCycle(void){
+
+	int cycle = 0;
+	int nmbr_cycles = 0;
+
+	// interrupts for reed- pin enabled, domain powered on
+	// ---------------------------------------------------
+			// Enable PIN25 for Interrupts
+			// IOCPortConfigureSet(BOARD_IOID_DP0, IOC_PORT_GPIO, IOC_IOMODE_NORMAL | IOC_RISING_EDGE | IOC_INT_ENABLE | IOC_IOPULL_DOWN  | IOC_INPUT_ENABLE | IOC_WAKE_ON_HIGH);
+			//Set device to wake MCU from standby on PIN 25
+			// HWREG(AON_EVENT_BASE + AON_EVENT_O_MCUWUSEL) = AON_EVENT_MCUWUSEL_WU1_EV_PAD25;
+
+	// Enable and clear the Interrupt
+	IOCIntClear(IOID_25);
+	IntPendClear(INT_EDGE_DETECT);
+	IntEnable(INT_EDGE_DETECT);
+
+    do{
+    	int i = 2;
+    	nmbr_cycles ++;
+
+    }while(nmbr_cycles < 2);
+
+
+	// Disable PIN25 for Interrupts
+	// IOCPortConfigureSet(BOARD_IOID_DP0, IOC_PORT_GPIO, IOC_IOMODE_NORMAL | IOC_RISING_EDGE | IOC_INT_DISABLE | IOC_IOPULL_DOWN  | IOC_INPUT_ENABLE | IOC_WAKE_ON_HIGH);
+	// Clear device to wake MCU from standby on PIN 25
+	// HWREG(AON_EVENT_BASE + AON_EVENT_O_MCUWUSEL) = AON_EVENT_MCUWUSEL_WU1_EV_NONE;
+
+	// Disable all GPIO Interrupt
+	// IntDisable(INT_EDGE_DETECT); // -> in main
+
+	return cycle;
+}
+
 void reedInterruptOnOff(bool enable){
 
-	// Power on IOC domain
-	powerEnablePeriph();
-	powerEnableGPIOClockRunMode();
 
-	/* Wait for domains to power on */
-	while((PRCMPowerDomainStatus(PRCM_DOMAIN_PERIPH)
-			!= PRCM_DOMAIN_POWER_ON));
+
 
 	if(enable){
-		// Enable PIN25 for Interrupts
-		// IOCPortConfigureSet(BOARD_IOID_DP0, IOC_PORT_GPIO, IOC_IOMODE_NORMAL | IOC_RISING_EDGE | IOC_INT_ENABLE | IOC_IOPULL_DOWN  | IOC_INPUT_ENABLE | IOC_WAKE_ON_HIGH);
-		//Set device to wake MCU from standby on PIN 25
-		// HWREG(AON_EVENT_BASE + AON_EVENT_O_MCUWUSEL) = AON_EVENT_MCUWUSEL_WU1_EV_PAD25;
 
-		// Enable and clear the Interrupt
-		IOCIntClear(IOID_25);
-		IntPendClear(INT_EDGE_DETECT);
-		IntEnable(INT_EDGE_DETECT);
+
+
 	}
 	else{
-		// Disable PIN25 for Interrupts
-		// IOCPortConfigureSet(BOARD_IOID_DP0, IOC_PORT_GPIO, IOC_IOMODE_NORMAL | IOC_RISING_EDGE | IOC_INT_DISABLE | IOC_IOPULL_DOWN  | IOC_INPUT_ENABLE | IOC_WAKE_ON_HIGH);
-		// Clear device to wake MCU from standby on PIN 25
-		// HWREG(AON_EVENT_BASE + AON_EVENT_O_MCUWUSEL) = AON_EVENT_MCUWUSEL_WU1_EV_NONE;
 
-		// Disable all GPIO Interrupt
-		IntDisable(INT_EDGE_DETECT);
 	}
 
-	// Power off IOC domain
-	powerDisablePeriph();
-	// Disable clock for GPIO in CPU run mode
-	HWREGBITW(PRCM_BASE + PRCM_O_GPIOCLKGR, PRCM_GPIOCLKGR_CLK_EN_BITN) = 0;
-	// Load clock settings
-	HWREGBITW(PRCM_BASE + PRCM_O_CLKLOADCTL, PRCM_CLKLOADCTL_LOAD_BITN) = 1;
+
 }
 
 
 
 
 /**
- * GPIO is generally activated
+ * GPIO Interrupts and domain are generally activated
  */
 long getEnergyStateFromSPI(void){
 
+
+			// Enable PINXXXXXXXx for SPI
+			// -----------------------------
+			// IOCPortConfigureSet(BOARD_IOID_DP0, IOC_PORT_GPIO, IOC_IOMODE_NORMAL | IOC_RISING_EDGE | IOC_INT_ENABLE | IOC_IOPULL_DOWN  | IOC_INPUT_ENABLE | IOC_WAKE_ON_HIGH);
+			//Set device to wake MCU from standby on PIN 25
+			// HWREG(AON_EVENT_BASE + AON_EVENT_O_MCUWUSEL) = AON_EVENT_MCUWUSEL_WU1_EV_PAD25;
+
+	// Enable and clear the Interrupt
+//	IOCIntClear(IOID_25);
+//	IntPendClear(INT_EDGE_DETECT);
+//	IntEnable(INT_EDGE_DETECT); // -> main
+
+
+	// read spi
+	// ----------
+
 	g_current_energy_state = LOW_ENERGY;
+
+
+	// Disable PINXXXXXXXXXXXx for SPI-Interrupts
+	// ---------------------------------------
+	// IOCPortConfigureSet(BOARD_IOID_DP0, IOC_PORT_GPIO, IOC_IOMODE_NORMAL | IOC_RISING_EDGE | IOC_INT_DISABLE | IOC_IOPULL_DOWN  | IOC_INPUT_ENABLE | IOC_WAKE_ON_HIGH);
+	// Clear device to wake MCU from standby on PIN 25
+	// HWREG(AON_EVENT_BASE + AON_EVENT_O_MCUWUSEL) = AON_EVENT_MCUWUSEL_WU1_EV_NONE;
+
+	// Disable all GPIO Interrupt
+	// IntDisable(INT_EDGE_DETECT); // -> in main
+
 
 	return g_current_energy_state;
 
@@ -249,11 +292,38 @@ void powerDisableRFC(void) {
   HWREGBITW(PRCM_BASE + PRCM_O_PDCTL0RFC , PRCM_PDCTL0RFC_ON_BITN) = 0;
 }
 
+void enableGPIODomain(void){
+
+	// Power on IOC domain
+	// Enable PERIPH for GPIO access
+	HWREGBITW(PRCM_BASE + PRCM_O_PDCTL0PERIPH , PRCM_PDCTL0PERIPH_ON_BITN) = 1;
+	// Enable clock for GPIO in CPU run mode
+	HWREGBITW(PRCM_BASE + PRCM_O_GPIOCLKGR, PRCM_GPIOCLKGR_CLK_EN_BITN) = 1;
+	// Load clock settings
+	HWREGBITW(PRCM_BASE + PRCM_O_CLKLOADCTL, PRCM_CLKLOADCTL_LOAD_BITN) = 1;
+
+	/* Wait for domains to power on */
+	while((PRCMPowerDomainStatus(PRCM_DOMAIN_PERIPH)
+				!= PRCM_DOMAIN_POWER_ON));
+
+}
+
+void disabeleGPIODomain(){
+
+	// Power off IOC domain
+	// Disable PERIPH for GPIO access
+	HWREGBITW(PRCM_BASE + PRCM_O_PDCTL0PERIPH , PRCM_PDCTL0PERIPH_ON_BITN) = 0;
+	// Disable clock for GPIO in CPU run mode
+	HWREGBITW(PRCM_BASE + PRCM_O_GPIOCLKGR, PRCM_GPIOCLKGR_CLK_EN_BITN) = 0;
+	// Load clock settings
+	HWREGBITW(PRCM_BASE + PRCM_O_CLKLOADCTL, PRCM_CLKLOADCTL_LOAD_BITN) = 1;
+}
+
 void powerEnablePeriph(void) {
-  // Enable PERIPH for GPIO access
-  HWREGBITW(PRCM_BASE + PRCM_O_PDCTL0PERIPH , PRCM_PDCTL0PERIPH_ON_BITN) = 1;
-  // Load clock settings
-  HWREGBITW(PRCM_BASE + PRCM_O_CLKLOADCTL, PRCM_CLKLOADCTL_LOAD_BITN) = 1;
+	// Enable PERIPH for GPIO access
+	HWREGBITW(PRCM_BASE + PRCM_O_PDCTL0PERIPH , PRCM_PDCTL0PERIPH_ON_BITN) = 1;
+	// Load clock settings
+	HWREGBITW(PRCM_BASE + PRCM_O_CLKLOADCTL, PRCM_CLKLOADCTL_LOAD_BITN) = 1;
 }
 
 void powerDisablePeriph(void) {

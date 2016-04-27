@@ -93,28 +93,32 @@ void getData(void){
 
 	// Wakeup from RTC according to energy-state
 	// ---------------------------------------------
-	// AONRTCDisable();
-	AONRTCChannelDisable(AON_RTC_CH0);
+	AONRTCChannelDisable(AON_RTC_CH0);							// wake up timer
 
 	// start system
-	powerEnableRFC();
+	powerEnableRFC();											// ????  (erst nächste Funktion)
 	powerEnableAuxForceOn(); 									// ??????????????????????' not done in RTC interrupt ??
-	powerEnableCache(); 										// ?????  Wann notwendig ?? immer
+	powerEnableCache(); 										// ?????  erst nächste Funktion Wann notwendig ?? immer
 
+	// Enable GPIO-Interrupts
+	IntEnable(INT_EDGE_DETECT);									// activates GPIO-Interrupts. Int_EDGE_DETECT = Int Nr. 16  (=> all GPIO-interrupts)
+	enableGPIODomain(); 										// power on domain, set clk
 
 	// read STS, LTS to know Energy state
 	// ----------------------------------
-	IntEnable(INT_EDGE_DETECT);									// activates GPIO-Interrupts. Int_EDGE_DETECT = Int Nr. 16  (=> all GPIO-interrupts)
 	g_current_energy_state = getEnergyStateFromSPI();
 	updateRTCWakeUpTime(g_current_energy_state);
 
 
-
 	// measure speed
 	// -------------
-	AONRTCChannelEnable(AON_RTC_CH2);
-	//reedInterruptOnOff(true);	-> Funktion erste verlassen, wenn beide Werte ausgelesen sind	// clear intrupt flag  !!!!
-	IntDisable(INT_EDGE_DETECT);							// Disable all GPIO-interrupts
+	AONRTCChannelEnable(AON_RTC_CH2);							// speed timer
+	int cycle = readCycle();	//  -> Funktion erste verlassen, wenn beide Werte ausgelesen sind	// clear intrupt flag  !!!!
+
+
+	// Disable GPIO-and RTC-CH2-Interrupt
+	IntDisable(INT_EDGE_DETECT);								// Disable all GPIO-interrupts
+	disabeleGPIODomain();
 	AONRTCChannelDisable(AON_RTC_CH2);
 
 	// calculate velocity

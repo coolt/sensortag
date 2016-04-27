@@ -9,11 +9,15 @@ void initGPIOInterrupts(void);
 void initRFInterrupts(void);
 
 // Interrupt-Function
-void reedInterruptOnOff(bool enable);
+int readCycle(void);
+// void reedInterruptOnOff(bool enable);
 void start_RTC_speedMeasurement(uint32_t ms); 	// setRTC0  (can not be initalized)
 long getEnergyStateFromSPI(void);
 
 // power domain set up
+void  enableGPIODomain(void);
+void disabeleGPIODomain(void);
+
 void powerEnableAuxForceOn(void);
 void powerDisableAuxForceOn(void);
 
