@@ -225,21 +225,51 @@ void AONRTCIntHandler(void) {
 	}
 	}
 }
-// interrupts -----------------------------------------------------------
+
+
 void GPIOIntHandler(void){
+
+	// in der routine wird die handlung ausgeführt
 	uint32_t pin_mask;
 
+	// Disable Interrupt because of bouncing of the Pin
+	IntPendClear(INT_EDGE_DETECT);
+	IntDisable(INT_EDGE_DETECT);
+
+	// enable power to clear interrupt flag
 	powerEnablePeriph();
 	powerEnableGPIOClockRunMode();
+	while((PRCMPowerDomainStatus(PRCM_DOMAIN_PERIPH)
+			!= PRCM_DOMAIN_POWER_ON));
 
-	/* Wait for domains to power on */
-	while((PRCMPowerDomainStatus(PRCM_DOMAIN_PERIPH) != PRCM_DOMAIN_POWER_ON));
+	// wait because Edge is bouncing for approx. 3 ms
+	CPUdelay(20000); // 30 ms (to be safe, take a big value)
+
+	// Handling
 
 	/* Read interrupt flags */
 	pin_mask = (HWREG(GPIO_BASE + GPIO_O_EVFLAGS31_0) & GPIO_PIN_MASK);
 
+// new
+	// Interrupt of PAD25 - clear it
+		if(IOCIntStatus(IOID_25)){
+			IOCIntClear(IOID_25);
+
+				if(time1 == 0){
+					// Get the first Interrupt Time
+					time1 = AONRTCCurrentSubSecValueGet();
+				}
+				else{
+					// Get the second Interrupt Time
+					time2 = AONRTCCurrentSubSecValueGet();
+					meas_done = true;
+				}
+		}
+// end new
+
 	/* Clear the interrupt flags */
 	HWREG(GPIO_BASE + GPIO_O_EVFLAGS31_0) = pin_mask;
+
 
 	powerDisablePeriph();
 	// Disable clock for GPIO in CPU run mode
@@ -254,6 +284,9 @@ void GPIOIntHandler(void){
 	__asm(" nop");
 	__asm(" nop");
 	__asm(" nop");
+
+	// enable next GPIO Interrupt
+	IntEnable(INT_EDGE_DETECT);
 }
 
 

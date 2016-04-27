@@ -108,6 +108,7 @@ void getData(void){
 
 	// measure speed
 	// -------------
+	//reedInterruptOnOff(true);			// clear intrupt flag  !!!!
 
 	// calculate velocity
 	// ------------------
