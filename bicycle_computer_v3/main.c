@@ -39,8 +39,7 @@
 volatile bool rfBootDone;
 volatile bool rfSetupDone;
 volatile bool rfAdvertisingDone;
-uint32_t g_timestamp1, g_timestamp2, g_timeDiff;
-bool measurement_done, first;
+
 char payload[ADVLEN];
 
 // ------------------------------

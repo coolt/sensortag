@@ -16,10 +16,7 @@
 #define BUTTON						BOARD_IOID_KEY_RIGHT     // IOID_4
 
 
-/*#define IO_A  IOID_0
-#define IO_B  IOID_1
-#define IO_C  IOID_2
-#define IO_D  IOID_3
+/*
 #define IO_E  IOID_4 */
 
 // RTC wakeup interval
@@ -56,4 +53,4 @@ extern volatile bool rfAdvertisingDone;				// communication flag
 //* Speed measurement
 // -----------------
 extern uint32_t g_timestamp1, g_timestamp2, g_timeDiff;
-extern bool measurement_done, first;
+extern bool g_measurement_done;

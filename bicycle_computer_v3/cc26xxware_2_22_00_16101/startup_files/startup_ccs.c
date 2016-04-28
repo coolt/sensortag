@@ -59,6 +59,8 @@ volatile bool rfAdvertisingDone;
 
 long g_current_wake_up_time;
 
+uint32_t g_timestamp1, g_timestamp2, g_timeDiff;
+bool g_measurement_done;
 //*****************************************************************************
 //
 //! Forward declaration of the reset ISR and the default fault handlers.
@@ -211,7 +213,7 @@ void AONRTCIntHandler(void) {
 	// --------------
 	if(AONRTCEventGet(AON_RTC_CH0)){
 
-		AONRTCEventClear(AON_RTC_CH0);		 	// Clear RTC 0 event flag
+		AONRTCEventClear(AON_RTC_CH0);		 // Clear RTC 0 event flag
 		AONRTCCompareValueSet(AON_RTC_CH0, AONRTCCompareValueGet(AON_RTC_CH0)+(g_current_wake_up_time));  // set new wake up time
 		//AONRTCCompareValueSet(AON_RTC_CH0, AONRTCCompareValueGet(AON_RTC_CH0)+(WAKE_INTERVAL_HIGH_ENERGY));  // set new wake up time
 
@@ -220,54 +222,66 @@ void AONRTCIntHandler(void) {
 	// -----------------------
 	if(AONRTCEventGet(AON_RTC_CH2)){
 
-		AONRTCEventClear(AON_RTC_CH2);			 // Clear RTC 2 event flag
+		AONRTCEventClear(AON_RTC_CH2);		// Clear RTC 2 event flag
 
 	}
 	}
 }
 // interrupts -----------------------------------------------------------
 void GPIOIntHandler(void){
+
 	uint32_t pin_mask = 0;
 
+	IntDisable(INT_EDGE_DETECT);
+
+	// power on
 	powerEnablePeriph();
 	powerEnableGPIOClockRunMode();
-
-	/* Wait for domains to power on */
 	while((PRCMPowerDomainStatus(PRCM_DOMAIN_PERIPH) != PRCM_DOMAIN_POWER_ON));
 
 	/* Read interrupt flags */
 	pin_mask = (HWREG(GPIO_BASE + GPIO_O_EVFLAGS31_0) & GPIO_PIN_MASK);
 
+	// wait because Edge is bouncing for approx. 3 ms
+	CPUdelay(10000); 						// 10 ms
 
-	// handling // GPIO_DOUT31_0_DIO25
+	// handling
 	//----------
-	if(pin_mask == GPIO_DOUT31_0_DIO25 ){ 				// Reed Switch (auf DP0)
 
-		/* Clear the interrupt flags */
-		HWREG(GPIO_BASE + GPIO_O_EVFLAGS31_0) = pin_mask;
-		/* Clear pending interrupts */
+	// Reed-Pin for speed measuring
+	// ----------------------------
+	// if( IOCIntStatus(IOID_25) )
+	if(pin_mask == GPIO_DOUT31_0_DIO25 ){ 	// Reed Switch (auf DP0)
 
-		// timestamp
+		IOCIntClear(IOID_25);
+		IntPendClear(INT_EDGE_DETECT);
+
+	// set timestamp
+		if(g_timestamp1 == 0){
+			// Get the first Interrupt Time
+			g_timestamp1 = AONRTCCurrentSubSecValueGet();
+		} else{
+			// Get the second Interrupt Time
+			g_timestamp2 = AONRTCCurrentSubSecValueGet();
+			g_measurement_done = true;
+		}
 
 	}
-
 	if(pin_mask == GPIO_DOUT31_0_DIO4 ){ 				// Button
 
 			/* Clear the interrupt flags */
 			HWREG(GPIO_BASE + GPIO_O_EVFLAGS31_0) = pin_mask;
 			/* Clear pending interrupts */
 
+	}
 
-
-		}
 	/* Clear the interrupt flags */
 	HWREG(GPIO_BASE + GPIO_O_EVFLAGS31_0) = pin_mask;
 
-	powerDisablePeriph();
-	// Disable clock for GPIO in CPU run mode
-	HWREGBITW(PRCM_BASE + PRCM_O_GPIOCLKGR, PRCM_GPIOCLKGR_CLK_EN_BITN) = 0;
-	// Load clock settings
-	HWREGBITW(PRCM_BASE + PRCM_O_CLKLOADCTL, PRCM_CLKLOADCTL_LOAD_BITN) = 1;
+	// power down after wake up
+	powerDisablePeriph();							// Power off IOC domain
+	HWREGBITW(PRCM_BASE + PRCM_O_GPIOCLKGR, PRCM_GPIOCLKGR_CLK_EN_BITN) = 0; // Disable clock for GPIO in CPU run mode
+	HWREGBITW(PRCM_BASE + PRCM_O_CLKLOADCTL, PRCM_CLKLOADCTL_LOAD_BITN) = 1;  // Load clock settings
 
 	//To avoid second interupt with register = 0 (its not fast enough!!)
 	__asm(" nop");
@@ -276,6 +290,8 @@ void GPIOIntHandler(void){
 	__asm(" nop");
 	__asm(" nop");
 	__asm(" nop");
+
+	IntEnable(INT_EDGE_DETECT);						// Second Int will comme
 }
 
 
