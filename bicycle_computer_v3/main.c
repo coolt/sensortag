@@ -66,7 +66,7 @@ void initSensortag(void){
 
 		// Configure Interrupts
 		initWUCEvent();											// Ch0 = RTC2, Ch1 = all GPIO, Ch2 = RTC0
-		initRTCInterrupts();		// Ziel						// CH0: WakeUp, CH2: Speed calculation
+		initRTCInterrupts();									// CH0: WakeUp, CH2: Speed calculation
 		initGPIOInterrupts();									// Define IOPorts for Interrupt, Add GPIO-mask to WU-Event
 		initRFInterrupts(); 									// Set RFInterrupts to NVIC
 

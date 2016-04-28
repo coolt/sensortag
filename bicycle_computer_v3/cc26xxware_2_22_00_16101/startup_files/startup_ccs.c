@@ -251,7 +251,8 @@ void GPIOIntHandler(void){
 	// Reed-Pin for speed measuring
 	// ----------------------------
 	// if( IOCIntStatus(IOID_25) )
-	if(pin_mask == GPIO_DOUT31_0_DIO25 ){ 	// Reed Switch (auf DP0)
+	// if(pin_mask == GPIO_DOUT31_0_DIO25 )
+	if(pin_mask == GPIO_DOUT31_0_DIO25 && !g_measurement_done ){ 	// Reed Switch (auf DP0)
 
 		IOCIntClear(IOID_25);
 		IntPendClear(INT_EDGE_DETECT);

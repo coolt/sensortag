@@ -33,9 +33,8 @@ void updateRTCWakeUpTime(long energy_state){
 }
 
 
-
-
-// new function from PA
+// reduced function AONRTCCurrentCompareValueGet() from aon_rtc.c
+// retun value is only Subsec. Sec is ignored
 uint32_t AONRTCCurrentSubSecValueGet( void )
 {
     uint32_t   ui32CurrentSec    ;
@@ -53,4 +52,5 @@ uint32_t AONRTCCurrentSubSecValueGet( void )
     } while ( ui32CurrentSec != ui32SecondSecRead );
 
     return ui32CurrentSubSec;
+    // return (( ui32CurrentSec << 16 ) | ( ui32CurrentSubSec >> 16 ));
 }
