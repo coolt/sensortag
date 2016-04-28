@@ -133,11 +133,11 @@ void setData(void){
 		payload[6] =  (char)((g_time_ms >> 8) & 0x000000FF);
 		payload[7] =  (char)(g_time_ms  & 0x000000FF);
 
-/*		payload[4] =  (char) 1;
+		payload[4] =  (char) 1;
 		payload[5] =  (char) 2;
 		payload[6] =  3;
 		payload[7] =  4;
-*/
+
 		g_measurement_done = false;
 
 	}
