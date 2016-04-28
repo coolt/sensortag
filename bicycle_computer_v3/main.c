@@ -35,14 +35,15 @@
 #include "string.h"
 
 
-// globale variables: declared in config.h, used in radio.c and startup_ccs
-volatile bool rfBootDone;
+// globale variables: declared in config.h, set in handler (startup_ccs) and radio.c
+bool g_measurement_done;				// flag, set when 2 timestamps from reed-switch are stored
+uint32_t g_timestamp1;
+char payload[ADVLEN];					// shared data buffer
+volatile bool rfBootDone;				// flags RF-Commands
 volatile bool rfSetupDone;
 volatile bool rfAdvertisingDone;
 
-char payload[ADVLEN];
-
-// ------------------------------
+// ------------------------------b
 // functions
 // ------------------------------
 
@@ -109,6 +110,16 @@ void getData(void){
 	// measure speed
 	// -------------
 
+	//  wait until interrupt set timestamps
+	while(! g_measurement_done){
+		int i = 5;
+
+		// calculate
+
+		// reset
+		g_measurement_done = false;
+		g_timestamp1 = 0;
+	}
 	// calculate velocity
 	// ------------------
 
