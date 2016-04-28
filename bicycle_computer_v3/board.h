@@ -105,18 +105,7 @@
 #define BOARD_IOID_AUDIO_DI         IOID_2
 #define BOARD_IOID_AUDIO_CLK        IOID_11
 
-// bicycle computer
-#define REED_SWITCH					BOARD_IOID_DP0   // IOID_25
-#define VCC_LTS						BOARD_IOID_DP1   // IOID_24 (analog)
-#define VCC_STS						BOARD_IOID_DP2   // IOID_23
-#define VREG						BOARD_IOID_DP3   // IOID_27
-#define BAT_LOW						BOARD_IOID_DP4_UARTRX // IOID_28
-#define HRV_LOW						BOARD_IOID_DP5_UARTTX // IOID_29
-#define WAKE_UP						BOARD_IOID_AUDIODO    // IOID_22 (from sensortag to em-board)
-#define EM_CS						BOARD_IOID_DEVPACK_CS // IOID_20
-#define MCU_MOSI					BOARD_IOID_SPI_MOSI   // IOID_19
-#define MCU_MISO					BOARD_IOID_SPI_MISO   // IOID_18
-#define MCU_SCLK					BOARD_IOID_SPI_CLK_FLASH // IOID_17
+
 
 // device string
 #define BOARD_STRING "TI CC2650 SensorTag"

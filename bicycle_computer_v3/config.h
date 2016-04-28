@@ -1,7 +1,21 @@
 // Configuration application
 #include <inc/hw_types.h>
 
-// GPIO Pins
+//* @note: first definitions in board.h
+#define REED_SWITCH					BOARD_IOID_DP0   // IOID_25
+#define VCC_LTS						BOARD_IOID_DP1   // IOID_24 (analog)
+#define VCC_STS						BOARD_IOID_DP2   // IOID_23
+#define VREG						BOARD_IOID_DP3   // IOID_27
+#define BAT_LOW						BOARD_IOID_DP4_UARTRX // IOID_28
+#define HRV_LOW						BOARD_IOID_DP5_UARTTX // IOID_29
+#define WAKE_UP						BOARD_IOID_AUDIODO    // IOID_22 (from sensortag to em-board)
+#define EM_CS						BOARD_IOID_DEVPACK_CS // IOID_20
+#define MCU_MOSI					BOARD_IOID_SPI_MOSI   // IOID_19
+#define MCU_MISO					BOARD_IOID_SPI_MISO   // IOID_18
+#define MCU_SCLK					BOARD_IOID_SPI_CLK_FLASH // IOID_17
+#define BUTTON						BOARD_IOID_KEY_RIGHT     // IOID_4
+
+
 /*#define IO_A  IOID_0
 #define IO_B  IOID_1
 #define IO_C  IOID_2
@@ -27,7 +41,8 @@ extern long g_current_wake_up_time/* = WAKE_INTERVAL_HIGH_ENERGY*/;		// = max. =
 
 extern long g_current_energy_state;
 
-
+//* Radio data
+// ------------
 // Length of Data-Block (inclusive length, type, uuid)
 #define ADVLEN 16
 
@@ -37,3 +52,8 @@ extern char payload[ADVLEN]; 						// data buffer
 extern volatile bool rfBootDone;					// communication flag
 extern volatile bool rfSetupDone;					// communication flag
 extern volatile bool rfAdvertisingDone;				// communication flag
+
+//* Speed measurement
+// -----------------
+extern uint32_t g_timestamp1, g_timestamp2, g_timeDiff;
+extern bool measurement_done, first;

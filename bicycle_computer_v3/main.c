@@ -39,7 +39,8 @@
 volatile bool rfBootDone;
 volatile bool rfSetupDone;
 volatile bool rfAdvertisingDone;
-
+uint32_t g_timestamp1, g_timestamp2, g_timeDiff;
+bool measurement_done, first;
 char payload[ADVLEN];
 
 // ------------------------------
@@ -69,7 +70,7 @@ void initSensortag(void){
 		initRTCInterrupts();		// Ziel						// CH0: WakeUp, CH2: Speed calculation
 		initGPIOInterrupts();									// Define IOPorts for Interrupt, Add GPIO-mask to WU-Event
 		initRFInterrupts(); 									// Set RFInterrupts to NVIC
-		CPUcpsie();												// All extern interrupts enable (globaly)
+
 
 		// Setup for next state
 		IntEnable(INT_EDGE_DETECT); // Dario
@@ -225,6 +226,7 @@ void sleep(){
 int main(void) {
 
   initSensortag();
+  CPUcpsie();												// All extern interrupts enable (globaly)
 
   // interrupt driven application
   while(1) {

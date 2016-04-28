@@ -64,7 +64,7 @@
 // Data Out 24 to 27
 #define GPIO_O_DOUT27_24                                            0x00000018
 
-// Data Out 28 to 31
+// Data Out 28 to 31f
 #define GPIO_O_DOUT31_28                                            0x0000001C
 
 // Data Output for DIO 0 to 31

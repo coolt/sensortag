@@ -227,7 +227,7 @@ void AONRTCIntHandler(void) {
 }
 // interrupts -----------------------------------------------------------
 void GPIOIntHandler(void){
-	uint32_t pin_mask;
+	uint32_t pin_mask = 0;
 
 	powerEnablePeriph();
 	powerEnableGPIOClockRunMode();
@@ -238,6 +238,28 @@ void GPIOIntHandler(void){
 	/* Read interrupt flags */
 	pin_mask = (HWREG(GPIO_BASE + GPIO_O_EVFLAGS31_0) & GPIO_PIN_MASK);
 
+
+	// handling // GPIO_DOUT31_0_DIO25
+	//----------
+	if(pin_mask == GPIO_DOUT31_0_DIO25 ){ 				// Reed Switch (auf DP0)
+
+		/* Clear the interrupt flags */
+		HWREG(GPIO_BASE + GPIO_O_EVFLAGS31_0) = pin_mask;
+		/* Clear pending interrupts */
+
+		// timestamp
+
+	}
+
+	if(pin_mask == GPIO_DOUT31_0_DIO4 ){ 				// Button
+
+			/* Clear the interrupt flags */
+			HWREG(GPIO_BASE + GPIO_O_EVFLAGS31_0) = pin_mask;
+			/* Clear pending interrupts */
+
+
+
+		}
 	/* Clear the interrupt flags */
 	HWREG(GPIO_BASE + GPIO_O_EVFLAGS31_0) = pin_mask;
 

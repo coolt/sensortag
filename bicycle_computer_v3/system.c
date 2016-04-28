@@ -83,12 +83,16 @@ void initGPIOInterrupts(void){
 	 IOCPortConfigureSet(BOARD_IOID_KEY_RIGHT, IOC_PORT_GPIO, IOC_IOMODE_NORMAL | IOC_FALLING_EDGE | IOC_INT_ENABLE | IOC_IOPULL_UP | IOC_INPUT_ENABLE | IOC_WAKE_ON_LOW);
 
 
-/*	// REED_SWITCH = IOID_25, external interrupt on rising edge and wake up
-	IOCPortConfigureSet(REED_SWITCH, IOC_PORT_GPIO, IOC_IOMODE_NORMAL | IOC_FALLING_EDGE | IOC_INT_ENABLE | IOC_IOPULL_UP | IOC_INPUT_ENABLE | IOC_WAKE_ON_LOW);
+	// REED_SWITCH = IOID_25, external interrupt on rising edge and wake up
+	//IOCPortConfigureSet(REED_SWITCH, IOC_PORT_GPIO, IOC_IOMODE_NORMAL | IOC_FALLING_EDGE | IOC_INT_ENABLE | IOC_IOPULL_UP | IOC_INPUT_ENABLE | IOC_WAKE_ON_LOW);
+	 IOCPortConfigureSet(REED_SWITCH, IOC_PORT_GPIO, IOC_IOMODE_NORMAL | IOC_RISING_EDGE | IOC_INT_ENABLE | IOC_IOPULL_DOWN | IOC_INPUT_ENABLE | IOC_WAKE_ON_HIGH);
 
-	// BAT_LOW = IOID_28, external interrupt on rising edge and wake up
-	//IOCPortConfigureSet(BAT_LOW, IOC_PORT_GPIO, IOC_IOMODE_NORMAL | IOC_FALLING_EDGE | IOC_INT_ENABLE | IOC_IOPULL_UP | IOC_INPUT_ENABLE | IOC_WAKE_ON_LOW);
-*/
+	 // BAT_LOW = IOID_28, external interrupt on rising edge and wake up
+	IOCPortConfigureSet(BAT_LOW, IOC_PORT_GPIO, IOC_IOMODE_NORMAL | IOC_FALLING_EDGE | IOC_INT_ENABLE | IOC_IOPULL_UP | IOC_INPUT_ENABLE | IOC_WAKE_ON_LOW);
+
+	// Clear GPIO Register
+	HWREG(GPIO_BASE + GPIO_O_EVFLAGS31_0) & GPIO_O_DOUTCLR31_0;
+
 }
 
 
@@ -110,7 +114,7 @@ void initRFInterrupts(void) { // hiess vorher: initInterrupts
 
 long getEnergyStateFromSPI(void){
 
-	g_current_energy_state = HIGH_ENERGY;
+	g_current_energy_state = LOW_ENERGY;
 
 	return g_current_energy_state;
 
