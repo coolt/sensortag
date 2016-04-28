@@ -37,11 +37,12 @@
 
 // globale variables: declared in config.h, set in handler (startup_ccs) and radio.c
 bool g_measurement_done;				// flag, set when 2 timestamps from reed-switch are stored
-uint32_t g_timestamp1;
+uint32_t g_timestamp1, g_timestamp2, g_time_ms;
 char payload[ADVLEN];					// shared data buffer
 volatile bool rfBootDone;				// flags RF-Commands
 volatile bool rfSetupDone;
 volatile bool rfAdvertisingDone;
+bool g_button_pressed;
 
 // ------------------------------b
 // functions
@@ -64,6 +65,7 @@ void initSensortag(void){
 		sensorsInit();											// Enable needed Sensors
 		initRadio();											// Set Communicationmode = BLE, Channels = 3, Advertising modus
 		ledInit();
+		initBLEBuffer(); 										// Set default structure
 
 		// Configure Interrupts
 		initWUCEvent();											// Ch0 = RTC2, Ch1 = all GPIO, Ch2 = RTC0
@@ -107,55 +109,49 @@ void getData(void){
 	g_current_energy_state = getEnergyStateFromSPI();
 	updateRTCWakeUpTime(g_current_energy_state);
 
-	// measure speed
-	// -------------
-
+	// read reed switch twice
+	// ----------------------
 	//  wait until interrupt set timestamps
-	while(! g_measurement_done){
-		int i = 5;
+	if(g_measurement_done){
 
-		// calculate
-
-		// reset
-		g_measurement_done = false;
-		g_timestamp1 = 0;
+		// calculate time-difference
+		uint32_t g_time_ms = getTime();
 	}
-	// calculate velocity
-	// ------------------
 
 }
+
+
 void setData(void){
 
-	memset(payload, 0, ADVLEN); // Clear payload buffer
+	if(g_measurement_done == true){
 
-	// Payload buffer = ADV DATA in ADV structure
-	// BLE-Packet = 62 bytes, therefore 37 bytes of data (in payloadbuffer)
-	// --------------------------------------------------------------------
-	payload[0] = ADVLEN - 1; 		// length = ADV-Length - 1 (1 Byte)
+		int offset_speed_data = 4;
 
-	payload[1] = 0x03; 				// Type (1 Byte)  =>   0x03 = UUID -> immer 2 Bytes
+		// set current time in ms into BLE-buffer
+		payload[4] =  (char)((g_time_ms >> 24) & 0x000000FF);
+		payload[5] =  (char)((g_time_ms >> 16) & 0x000000FF);
+		payload[6] =  (char)((g_time_ms >> 8) & 0x000000FF);
+		payload[7] =  (char)(g_time_ms  & 0x000000FF);
 
-	payload[2] = 0xDE; 				// UUID (2 Bytes) =>   0xDE00 (UUID im Ines)
-	payload[3] = 0x00;
+/*		payload[4] =  (char) 1;
+		payload[5] =  (char) 2;
+		payload[6] =  3;
+		payload[7] =  4;
+*/
+		g_measurement_done = false;
 
-	payload[4] = 0x05; 				// Geschwindigkeit (2 Bytes)
-	payload[5] = 0x06; 				//
+	}
 
-	payload[6] = 0x01;				// Checksumme (2 Bytes)
-	payload[7] = 0x02;
+	if(g_button_pressed == true){
 
-	payload[8] = 0x03;				// Sensor 1: Höhenmeter
-	payload[9] = 0x04;
+		char c1 = 8, c2 = 8;
+		// check bytes
+		payload[14] =  (char) c1;
+		payload[15] =  (char) c2;
 
-	payload[10] = 0x05;				// Sensor 2
-	payload[11] = 0x06;
+		g_button_pressed = false;
 
-	payload[12] = 0x07;				// Sensor 3
-	payload[13] = 0x08;
-
-	payload[14] = 0x09;				// Laufnummer (Sequenznummer, ob Packet fehlt)
-	payload[15] = 0x0A;
-
+	}
 
 	//Start radio setup and linked advertisment
 	radioUpdateAdvData(16, payload); 			//Update advertising byte based on IO inputs

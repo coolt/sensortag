@@ -51,6 +51,6 @@ uint32_t AONRTCCurrentSubSecValueGet( void )
         ui32SecondSecRead = HWREG( AON_RTC_BASE + AON_RTC_O_SEC    );
     } while ( ui32CurrentSec != ui32SecondSecRead );
 
-    return ui32CurrentSubSec;
+    return ui32CurrentSubSec >> 16 ;
     // return (( ui32CurrentSec << 16 ) | ( ui32CurrentSubSec >> 16 ));
 }

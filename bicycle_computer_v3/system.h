@@ -5,12 +5,15 @@
 // interrupt configuration
 void initWUCEvent(void);						// add each WUC on a differen channel
 void initRTCInterrupts(void); 					// enables RTC0 and RTC2, set RTC2
+void initBLEBuffer(void);
 void initGPIOInterrupts(void);
 void initRFInterrupts(void);
 
 // Interrupt-Function
 void start_RTC_speedMeasurement(uint32_t ms); 	// setRTC0  (can not be initalized)
 long getEnergyStateFromSPI(void);
+uint32_t getTime(void);
+void calculateSpeed(uint32_t deltaTime);
 
 // power domain set up
 void powerEnableAuxForceOn(void);

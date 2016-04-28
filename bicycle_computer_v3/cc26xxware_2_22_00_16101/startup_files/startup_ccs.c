@@ -52,15 +52,26 @@
 #include "../../config.h"  // set global variables
 
 
-// globale variables: declared in main. used here and in radio.c
+// globale variables:
+// declared in main. used here and in radio.c
+// ------------------------------------------
+
+// RTC Wake up
+long g_current_wake_up_time;
+
+// RTC Speed measuring
+uint32_t g_timestamp1, g_timestamp2, g_timeDiff;
+bool g_measurement_done;
+
+// RFChip  Send BLE data
 volatile bool rfBootDone;
 volatile bool rfSetupDone;
 volatile bool rfAdvertisingDone;
 
-long g_current_wake_up_time;
+// Button input
+bool g_button_pressed;
 
-uint32_t g_timestamp1, g_timestamp2, g_timeDiff;
-bool g_measurement_done;
+
 //*****************************************************************************
 //
 //! Forward declaration of the reset ISR and the default fault handlers.
@@ -217,7 +228,7 @@ void AONRTCIntHandler(void) {
 		AONRTCCompareValueSet(AON_RTC_CH0, AONRTCCompareValueGet(AON_RTC_CH0)+(g_current_wake_up_time));  // set new wake up time
 		//AONRTCCompareValueSet(AON_RTC_CH0, AONRTCCompareValueGet(AON_RTC_CH0)+(WAKE_INTERVAL_HIGH_ENERGY));  // set new wake up time
 
-
+	}
 	// Speed measurement Timer
 	// -----------------------
 	if(AONRTCEventGet(AON_RTC_CH2)){
@@ -225,13 +236,13 @@ void AONRTCIntHandler(void) {
 		AONRTCEventClear(AON_RTC_CH2);		// Clear RTC 2 event flag
 
 	}
-	}
 }
 // interrupts -----------------------------------------------------------
 void GPIOIntHandler(void){
 
 	uint32_t pin_mask = 0;
 
+	// block temporary new interrupts
 	IntDisable(INT_EDGE_DETECT);
 
 	// power on
@@ -252,7 +263,7 @@ void GPIOIntHandler(void){
 	// ----------------------------
 	// if( IOCIntStatus(IOID_25) )
 	// if(pin_mask == GPIO_DOUT31_0_DIO25 )
-	if(pin_mask == GPIO_DOUT31_0_DIO25 && !g_measurement_done ){ 	// Reed Switch (auf DP0)
+	if(pin_mask == GPIO_DOUT31_0_DIO25 ){ 	// Reed Switch (auf DP0)
 
 		IOCIntClear(IOID_25);
 		IntPendClear(INT_EDGE_DETECT);
@@ -274,6 +285,8 @@ void GPIOIntHandler(void){
 			HWREG(GPIO_BASE + GPIO_O_EVFLAGS31_0) = pin_mask;
 			/* Clear pending interrupts */
 
+			g_button_pressed = true;
+
 	}
 
 	/* Clear the interrupt flags */
@@ -284,7 +297,7 @@ void GPIOIntHandler(void){
 	HWREGBITW(PRCM_BASE + PRCM_O_GPIOCLKGR, PRCM_GPIOCLKGR_CLK_EN_BITN) = 0; // Disable clock for GPIO in CPU run mode
 	HWREGBITW(PRCM_BASE + PRCM_O_CLKLOADCTL, PRCM_CLKLOADCTL_LOAD_BITN) = 1;  // Load clock settings
 
-	//To avoid second interupt with register = 0 (its not fast enough!!)
+	// from Dario
 	__asm(" nop");
 	__asm(" nop");
 	__asm(" nop");
@@ -292,7 +305,8 @@ void GPIOIntHandler(void){
 	__asm(" nop");
 	__asm(" nop");
 
-	IntEnable(INT_EDGE_DETECT);						// Second Int will comme
+	// get interrupts free
+	IntEnable(INT_EDGE_DETECT);
 }
 
 

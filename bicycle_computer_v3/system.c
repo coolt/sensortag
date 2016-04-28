@@ -17,17 +17,21 @@
 
 
 // GPIO
-#include "cc26xxware_2_22_00_16101/driverLib/gpio.h" 				// Konstanten GPIO Pins
-#include "board.h" 													// Konstanten IO
-#include "cc26xxware_2_22_00_16101/driverLib/ioc.h"  				// Grundeinstellungen aktivieren domains
+#include "cc26xxware_2_22_00_16101/driverLib/gpio.h" 						// Konstanten GPIO Pins
+#include "board.h" 															// Konstanten IO
+#include "cc26xxware_2_22_00_16101/driverLib/ioc.h"  						// Grundeinstellungen aktivieren domains
 #include "cc26xxware_2_22_00_16101/inc/hw_aon_event.h"
 
 // RFC
 #include "radio.h"
 
+// globale variable
+uint32_t g_timestamp1, g_timestamp2;
+
+
 void initWUCEvent(){
 
-	AONRTCCombinedEventConfig(AON_RTC_CH0 | AON_RTC_CH2);  			// Set all used channels to Event-Fabric
+	AONRTCCombinedEventConfig(AON_RTC_CH0 | AON_RTC_CH2);  					// Set all used channels to Event-Fabric
 
 	 // Set Interrupt to WUC. Wake MCU afther this Interrupts
 	 // WUC0 = RTC2
@@ -41,39 +45,19 @@ void initRTCInterrupts(void) {
 
 	// Ch 0: Wake up
 	// --------------
-	AONRTCCompareValueSet(AON_RTC_CH0, WAKE_INTERVAL_MIDDLE_ENERGY); 	// Inital Wake up value  (= 10 s)
-	AONRTCChannelEnable(AON_RTC_CH0);								// Enable channel 0
+	AONRTCCompareValueSet(AON_RTC_CH0, WAKE_INTERVAL_MIDDLE_ENERGY); 		// Inital Wake up value  (= 10 s)
+	AONRTCChannelEnable(AON_RTC_CH0);										// Enable channel 0
 
 /*	// Ch 2: Speed Meausrement  -> init by calling
 	// -----------------------
 	AONRTCCompareValueSet(AON_RTC_CH2, WAKE_INTERVAL_MIDDLE_ENERGY);		// Set RTC ch2 initial compare value: erster Intrupt, der ausgelöst wird
 	AONRTCIncValueCh2Set(WAKE_INTERVAL_MIDDLE_ENERGY);						// Set RTC ch 2 auto increment: Nach welcher Zeit der zweite Interrupt ausgelöst wird
-	AONRTCModeCh2Set(AON_RTC_MODE_CH2_CONTINUOUS);					// Set RTC CH 2 to auto increment mode ??????
-	AONRTCChannelEnable(AON_RTC_CH2);								// Enable channel 2
+	AONRTCModeCh2Set(AON_RTC_MODE_CH2_CONTINUOUS);							// Set RTC CH 2 to auto increment mode ??????
+	AONRTCChannelEnable(AON_RTC_CH2);										// Enable channel 2
 */
 
 	// Enable RTC
 	AONRTCEnable();
-}
-
-// set up RTC2 Interrupt s
-void start_RTC_speedMeasurement(uint32_t ms){
-
-	uint32_t compare_intervall = ms * 65536 / 1000; // ???  ????????????????????????????????????????????????????????????
-	uint32_t current_compare_value = 0;
-	uint32_t wake_compare_value = 0;
-
-	current_compare_value = AONRTCCurrentCompareValueGet();
-	wake_compare_value = current_compare_value + compare_intervall;
-
-	//Set RTC ch2 initial compare value
-	AONRTCCompareValueSet(AON_RTC_CH2, wake_compare_value);
-	//Set RTC CH 2 to auto increment mode
-	AONRTCModeCh2Set(AON_RTC_MODE_CH2_NORMALCOMPARE);
-
-	//Enable channel 2
-	AONRTCChannelEnable(AON_RTC_CH2);
-
 }
 
 
@@ -110,6 +94,39 @@ void initRFInterrupts(void) { // hiess vorher: initInterrupts
 	// RFCCpe0IntEnable(uint32_t ui32Mask);   // Enable CPE0 Interrupt
 }
 
+
+// Payload buffer = ADV DATA in ADV structure
+// BLE-Packet = 62 bytes, therefore 37 bytes of data (in payloadbuffer)
+void initBLEBuffer(void){
+
+	memset(payload, 0, ADVLEN); 											// Clear payload buffer
+
+	// general
+	payload[0] = ADVLEN - 1; 												// length = ADV-Length - 1 (1 Byte)
+	payload[1] = 0x03; 														// Type (1 Byte)  =>   0x03 = UUID -> immer 2 Bytes
+	payload[2] = 0xDE; 														// UUID (2 Bytes) =>   0xDE00 (UUID im Ines)
+	payload[3] = 0x00;
+
+	// speed  in ms															// Typ is float (4 Bytes)
+	payload[4] = 0;
+	payload[5] = 0;
+	payload[6] = 0;
+	payload[7] = 0;
+
+	// sensors
+	payload[8] = 0;															// Sensor 1: Höhenmeter
+	payload[9] = 0;
+	payload[10] = 0;														// Sensor 2
+	payload[11] = 0;
+	payload[12] = 0;														// Sensor 3
+	payload[13] = 0;
+
+	// check
+	payload[14] = 0;														// Laufnummer (Sequenznummer, ob Packet fehlt)
+	payload[15] = 0;
+	// ev. checksum
+}
+
 // **********************************************************************************************
 
 long getEnergyStateFromSPI(void){
@@ -117,6 +134,30 @@ long getEnergyStateFromSPI(void){
 	g_current_energy_state = LOW_ENERGY;
 
 	return g_current_energy_state;
+
+}
+
+
+uint32_t getTime(void){
+
+	float time_ms = 0;
+	float time_float = 0;
+
+	// calculate time of wheel cycle
+	uint32_t timeDiff = g_timestamp2 - g_timestamp1;
+	// Handel overflow (doesn't matter)
+	timeDiff = timeDiff & 0xFFFF;
+
+	// convert from register-format to ms
+	timeDiff = timeDiff * 1000; 				// baek: in 2 Schritten, wegen overflow bei float
+	time_float = timeDiff;
+	time_ms = time_float / 65535.0;
+
+	// Reset Timevalues
+	g_timestamp1 = 0;
+	g_timestamp2 = 0;
+
+	return (uint32_t)(time_ms);
 
 }
 
