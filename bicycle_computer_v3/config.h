@@ -56,3 +56,8 @@ extern volatile bool rfAdvertisingDone;				// communication flag
 
 // button
 extern bool g_button_pressed;
+
+// sensor
+// -------
+extern bool g_pressure_set;
+extern uint16_t g_pressure;

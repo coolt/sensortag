@@ -14,9 +14,9 @@
 // Sensors
 #include "sensor-common.h"
 #include "ext-flash.h"
-#include "bmp-280-sensor.h"
+#include "bmp-280-sensor.h"				// barometric pressure
 #include "tmp-007-sensor.h"
-#include "hdc-1000-sensor.h"
+#include "hdc-1000-sensor.h"			// Humitiy
 #include "opt-3001-sensor.h"
 
 // GPIO
@@ -43,8 +43,10 @@ volatile bool rfBootDone;				// flags RF-Commands
 volatile bool rfSetupDone;
 volatile bool rfAdvertisingDone;
 bool g_button_pressed;
+bool g_pressure_set;					// pressure sensor state
+uint16_t g_pressure;
 
-// ------------------------------b
+// ------------------------------
 // functions
 // ------------------------------
 
@@ -140,6 +142,15 @@ void setData(void){
 
 		g_measurement_done = false;
 
+	}
+
+	if(g_pressure_set == true){
+		payload[8] =  g_pressure & 0x00FF;
+		payload[9] =  (g_pressure >> 8) & 0x00FF;
+		//payload[p++] =  raw_temp&0x00FF;
+		//payload[p++] =  (raw_temp>>8)&0x00FF;
+
+		g_pressure_set == false;
 	}
 
 	if(g_button_pressed == true){

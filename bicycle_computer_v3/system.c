@@ -114,7 +114,7 @@ void initBLEBuffer(void){
 	payload[7] = 0;
 
 	// sensors
-	payload[8] = 0;															// Sensor 1: Höhenmeter
+	payload[8] = 0;															// Sensor 1: Drucksensor
 	payload[9] = 0;
 	payload[10] = 0;														// Sensor 2
 	payload[11] = 0;
@@ -165,12 +165,17 @@ uint32_t getTime(void){
 
 void sensorsInit(void)
 {
+	// biometric pressure senosor
+	configure_bmp_280(0);
+
 	//Turn off TMP007
     configure_tmp_007(0);
 
 	//Power down Gyro
-	IOCPinTypeGpioOutput(BOARD_IOID_MPU_POWER);
-	GPIOPinClear(BOARD_MPU_POWER);
+	// IOCPinTypeGpioOutput(IOID_12); // github 26. Nov 15
+	// GPIOPinClear(1 << IOID_12);		// github 26. Nov 15
+	IOCPinTypeGpioOutput(BOARD_IOID_MPU_POWER); // dario
+	GPIOPinClear(BOARD_MPU_POWER); // dario
 
 	//Power down Mic
 	IOCPinTypeGpioOutput(BOARD_IOID_MIC_POWER);
