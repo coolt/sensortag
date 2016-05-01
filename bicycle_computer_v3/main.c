@@ -145,10 +145,9 @@ void setData(void){
 	}
 
 	if(g_pressure_set == true){
+
 		payload[8] =  g_pressure & 0x00FF;
 		payload[9] =  (g_pressure >> 8) & 0x00FF;
-		//payload[p++] =  raw_temp&0x00FF;
-		//payload[p++] =  (raw_temp>>8)&0x00FF;
 
 		g_pressure_set == false;
 	}
