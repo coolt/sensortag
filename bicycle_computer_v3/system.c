@@ -145,8 +145,6 @@ uint32_t getTime(void){
 
 	// calculate time of wheel cycle
 	uint32_t timeDiff = g_timestamp2 - g_timestamp1;
-	// Handel overflow (doesn't matter)
-	timeDiff = timeDiff & 0xFFFF;
 
 	// convert from register-format to ms
 	//timeDiff = timeDiff * 1000; 				// baek: in 2 Schritten, wegen overflow bei float

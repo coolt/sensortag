@@ -321,8 +321,7 @@ AONRTCCombinedEventConfig(uint32_t ui32Channels)
 //! \return None
 //
 //*****************************************************************************
-__STATIC_INLINE void
-AONRTCEventClear(uint32_t ui32Channel)
+__STATIC_INLINE void AONRTCEventClear(uint32_t ui32Channel)
 {
     // Check the arguments.
     ASSERT((ui32Channel == AON_RTC_CH0) ||
@@ -362,8 +361,7 @@ AONRTCEventClear(uint32_t ui32Channel)
 //! otherwise \c false.
 //
 //*****************************************************************************
-__STATIC_INLINE bool
-AONRTCEventGet(uint32_t ui32Channel)
+__STATIC_INLINE bool AONRTCEventGet(uint32_t ui32Channel)
 {
     uint32_t uint32Event = 0;
 
@@ -469,9 +467,7 @@ __STATIC_INLINE uint32_t AONRTCFractionGet(void) {
 //! value on every RTC clock tick.
 //
 //*****************************************************************************
-__STATIC_INLINE uint32_t
-AONRTCSubSecIncrGet(void)
-{
+__STATIC_INLINE uint32_t AONRTCSubSecIncrGet(void){
     return(HWREG(AON_RTC_BASE + AON_RTC_O_SUBSECINC));
 }
 
@@ -495,8 +491,7 @@ AONRTCSubSecIncrGet(void)
 //!  \sa AONRTCModeCh1Get()
 //
 //*****************************************************************************
-__STATIC_INLINE void
-AONRTCModeCh1Set(uint32_t ui32Mode)
+__STATIC_INLINE void AONRTCModeCh1Set(uint32_t ui32Mode)
 {
     // Check the arguments.
     ASSERT((ui32Mode == AON_RTC_MODE_CH1_CAPTURE) ||

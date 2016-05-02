@@ -131,16 +131,21 @@ void setData(void){
 	// after 2 RTC_CH2 interrupts, time measuring is done
 	if(g_measurement_done == true){
 
-		uint32_t time_ms = getTime();
-		// time_ms = 0x10203040;
+		uint32_t timeFromRegister = getTime();
+
+		// extract bytes
+		uint8_t higherSeconds    = (timeFromRegister >> 24) & 0x000000FF;
+		uint8_t lowerSeconds     = (timeFromRegister >> 16) & 0x000000FF;
+		uint8_t higherSubSeconds = (timeFromRegister >> 8) & 0x000000FF;
+		uint8_t lowerSubSeconds  = timeFromRegister  & 0x000000FF;
 
 		int offset_speed_data = 4;
 
-		// set current time in ms into BLE-buffer
-		payload[4] =  (char)((time_ms >> 24) & 0x000000FF);
-		payload[5] =  (char)((time_ms >> 16) & 0x000000FF);
-		payload[6] =  (char)((time_ms >> 8) & 0x000000FF);
-		payload[7] =  (char)(time_ms  & 0x000000FF);
+		// set current time to BLE-buffer
+		payload[4] =  (char) higherSeconds;
+		payload[5] =  (char) lowerSeconds;
+		payload[6] =  (char) higherSubSeconds;
+		payload[7] =  (char) lowerSubSeconds;
 
 		//payload[4] =  (char) 1;
 		//payload[5] =  (char) 2;
@@ -252,7 +257,7 @@ int main(void) {
 
   initSensortag();
   CPUcpsie();												// All extern interrupts enable (globaly)
-
+  g_timestamp1 = 0; 										// bei init löst sich Reed Int erstesmal von selbst aus
   // interrupt driven application
   while(1) {
 

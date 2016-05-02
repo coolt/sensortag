@@ -267,10 +267,13 @@ void GPIOIntHandler(void){
 		if(g_timestamp1 == 0){
 			// Get the first Interrupt Time
 			g_timestamp1 = AONRTCCurrentCompareValueGet(); // AONRTCCurrentSubSecValueGet();
+			int debug_1 = 5;
 		} else {
 			// Get the second Interrupt Time
 			g_timestamp2 = AONRTCCurrentCompareValueGet(); // AONRTCCurrentSubSecValueGet();
+			int debug = 2;
 			g_measurement_done = true;
+			AONRTCReset();
 		}
 	}
 
