@@ -24,18 +24,6 @@
 		<nature>org.eclipse.cdt.core.ccnature</nature>
 		<nature>org.eclipse.cdt.managedbuilder.core.ScannerConfigNature</nature>
 	</natures>
-	<linkedResources>
-		<link>
-			<name>stdbool.h</name>
-			<type>1</type>
-			<locationURI>PARENT-6-PROJECT_LOC/ti/ccsv6/tools/compiler/ti-cgt-arm_15.12.1.LTS/lib/src/stdbool.h</locationURI>
-		</link>
-		<link>
-			<name>stdint.h</name>
-			<type>1</type>
-			<locationURI>PARENT-6-PROJECT_LOC/ti/ccsv6/tools/compiler/ti-cgt-arm_15.12.1.LTS/lib/src/stdint.h</locationURI>
-		</link>
-	</linkedResources>
 	<variableList>
 		<variable>
 			<name>CC26XXWARE</name>

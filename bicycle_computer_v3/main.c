@@ -102,7 +102,7 @@ void getData(void){
 	// ---------------------------------------------
 
 	// start system
-	powerEnableRFC();
+	// powerEnableRFC();
 	powerEnableAuxForceOn(); // ??????????????????????' not done in RTC interrupt ??
 	powerEnableCache(); // ?????  Wann notwendig ?? immer
 
@@ -114,31 +114,38 @@ void getData(void){
 	// read reed switch twice
 	// ----------------------
 	//  wait until interrupt set timestamps
-	if(g_measurement_done){
+/*	if(g_measurement_done){
 
 		// calculate time-difference
 		uint32_t g_time_ms = getTime();
+		g_time_ms = 0x11223344;
 	}
-
+*/
 }
 
 
 void setData(void){
 
+	// Wait for interrupts, which read data
+
+	// after 2 RTC_CH2 interrupts, time measuring is done
 	if(g_measurement_done == true){
+
+		uint32_t time_ms = getTime();
+		// time_ms = 0x10203040;
 
 		int offset_speed_data = 4;
 
 		// set current time in ms into BLE-buffer
-		payload[4] =  (char)((g_time_ms >> 24) & 0x000000FF);
-		payload[5] =  (char)((g_time_ms >> 16) & 0x000000FF);
-		payload[6] =  (char)((g_time_ms >> 8) & 0x000000FF);
-		payload[7] =  (char)(g_time_ms  & 0x000000FF);
+		payload[4] =  (char)((time_ms >> 24) & 0x000000FF);
+		payload[5] =  (char)((time_ms >> 16) & 0x000000FF);
+		payload[6] =  (char)((time_ms >> 8) & 0x000000FF);
+		payload[7] =  (char)(time_ms  & 0x000000FF);
 
-		payload[4] =  (char) 1;
-		payload[5] =  (char) 2;
-		payload[6] =  3;
-		payload[7] =  4;
+		//payload[4] =  (char) 1;
+		//payload[5] =  (char) 2;
+		//payload[6] =  3;
+		//payload[7] =  4;
 
 		g_measurement_done = false;
 
@@ -146,8 +153,10 @@ void setData(void){
 
 	if(g_pressure_set == true){
 
-		payload[8] =  g_pressure & 0x00FF;
-		payload[9] =  (g_pressure >> 8) & 0x00FF;
+		// payload[8] =  g_pressure & 0x00FF;
+		// payload[9] =  (g_pressure >> 8) & 0x00FF;
+		payload[8] =  7;
+		payload[9] =  7;
 
 		g_pressure_set == false;
 	}

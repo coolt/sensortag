@@ -157,6 +157,8 @@ uint32_t getTime(void){
 	g_timestamp1 = 0;
 	g_timestamp2 = 0;
 
+	time_ms = 0x10203040;
+
 	return (uint32_t)(time_ms);
 
 }
