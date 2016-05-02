@@ -37,7 +37,7 @@
 
 // globale variables: declared in config.h, set in handler (startup_ccs) and radio.c
 bool g_measurement_done;				// flag, set when 2 timestamps from reed-switch are stored
-uint32_t g_timestamp1, g_timestamp2, g_time_ms;
+uint32_t g_timestamp1, g_timestamp2;
 char payload[ADVLEN];					// shared data buffer
 volatile bool rfBootDone;				// flags RF-Commands
 volatile bool rfSetupDone;

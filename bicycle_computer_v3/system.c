@@ -140,8 +140,8 @@ long getEnergyStateFromSPI(void){
 
 uint32_t getTime(void){
 
-	float time_ms = 0;
-	float time_float = 0;
+	//float time_ms = 0;
+	//float time_float = 0;
 
 	// calculate time of wheel cycle
 	uint32_t timeDiff = g_timestamp2 - g_timestamp1;
@@ -149,17 +149,17 @@ uint32_t getTime(void){
 	timeDiff = timeDiff & 0xFFFF;
 
 	// convert from register-format to ms
-	timeDiff = timeDiff * 1000; 				// baek: in 2 Schritten, wegen overflow bei float
-	time_float = timeDiff;
-	time_ms = time_float / 65535.0;
+	//timeDiff = timeDiff * 1000; 				// baek: in 2 Schritten, wegen overflow bei float
+	//time_float = timeDiff;
+	//time_ms = time_float / 65535.0;
 
 	// Reset Timevalues
 	g_timestamp1 = 0;
 	g_timestamp2 = 0;
 
-	time_ms = 0x10203040;
+	//time_ms = 0x10203040;
 
-	return (uint32_t)(time_ms);
+	return (uint32_t)(timeDiff);
 
 }
 

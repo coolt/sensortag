@@ -56,6 +56,9 @@
 // declared in main. used here and in radio.c
 // ------------------------------------------
 
+// Button input
+bool g_button_pressed;
+
 // RTC Wake up
 long g_current_wake_up_time;
 
@@ -63,14 +66,14 @@ long g_current_wake_up_time;
 uint32_t g_timestamp1, g_timestamp2, g_timeDiff;
 bool g_measurement_done;
 
+// Pressure Sensor
+bool g_pressure_set;					// pressure sensor state
+uint16_t g_pressure;
+
 // RFChip  Send BLE data
 volatile bool rfBootDone;
 volatile bool rfSetupDone;
 volatile bool rfAdvertisingDone;
-
-// Button input
-bool g_button_pressed;
-
 
 //*****************************************************************************
 //
@@ -223,70 +226,61 @@ void AONRTCIntHandler(void) {
 	// Wake up Timer
 	// --------------
 	if(AONRTCEventGet(AON_RTC_CH0)){
-
 		AONRTCEventClear(AON_RTC_CH0);		 // Clear RTC 0 event flag
 		AONRTCCompareValueSet(AON_RTC_CH0, AONRTCCompareValueGet(AON_RTC_CH0)+(g_current_wake_up_time));  // set new wake up time
 		//AONRTCCompareValueSet(AON_RTC_CH0, AONRTCCompareValueGet(AON_RTC_CH0)+(WAKE_INTERVAL_HIGH_ENERGY));  // set new wake up time
-
 	}
 	// Speed measurement Timer
 	// -----------------------
 	if(AONRTCEventGet(AON_RTC_CH2)){
-
 		AONRTCEventClear(AON_RTC_CH2);		// Clear RTC 2 event flag
-
 	}
 }
-// interrupts -----------------------------------------------------------
+
+
+
 void GPIOIntHandler(void){
 
 	uint32_t pin_mask = 0;
-
-	// block temporary new interrupts
-	IntDisable(INT_EDGE_DETECT);
+	IntDisable(INT_EDGE_DETECT);				// block temporary new interrupts
 
 	// power on
 	powerEnablePeriph();
 	powerEnableGPIOClockRunMode();
 	while((PRCMPowerDomainStatus(PRCM_DOMAIN_PERIPH) != PRCM_DOMAIN_POWER_ON));
 
-	/* Read interrupt flags */
-	pin_mask = (HWREG(GPIO_BASE + GPIO_O_EVFLAGS31_0) & GPIO_PIN_MASK);
+
+	pin_mask = (HWREG(GPIO_BASE + GPIO_O_EVFLAGS31_0) & GPIO_PIN_MASK);				/* Read interrupt flags */
 
 	// wait because Edge is bouncing for approx. 3 ms
 	CPUdelay(10000); 						// 10 ms
 
-	// handling
-	//----------
+	// handling ********************************
 
 	// Reed-Pin for speed measuring
 	// ----------------------------
 	// if( IOCIntStatus(IOID_25) )
-	// if(pin_mask == GPIO_DOUT31_0_DIO25 )
-	if(pin_mask == GPIO_DOUT31_0_DIO25 ){ 	// Reed Switch (auf DP0)
-
+	if(pin_mask == GPIO_DOUT31_0_DIO25 ){
 		IOCIntClear(IOID_25);
 		IntPendClear(INT_EDGE_DETECT);
-
-	// set timestamp
+		// set timestamp
 		if(g_timestamp1 == 0){
 			// Get the first Interrupt Time
-			g_timestamp1 = AONRTCCurrentSubSecValueGet();
-		} else{
+			g_timestamp1 = AONRTCCurrentCompareValueGet(); // AONRTCCurrentSubSecValueGet();
+		} else {
 			// Get the second Interrupt Time
-			g_timestamp2 = AONRTCCurrentSubSecValueGet();
+			g_timestamp2 = AONRTCCurrentCompareValueGet(); // AONRTCCurrentSubSecValueGet();
 			g_measurement_done = true;
 		}
-
 	}
-	if(pin_mask == GPIO_DOUT31_0_DIO4 ){ 				// Button
 
-			/* Clear the interrupt flags */
-			HWREG(GPIO_BASE + GPIO_O_EVFLAGS31_0) = pin_mask;
-			/* Clear pending interrupts */
-
-			g_button_pressed = true;
-
+	// Button
+	// -----------------------------------
+	if(pin_mask == GPIO_DOUT31_0_DIO4 ){
+		IOCIntClear(IOID_4);
+		IntPendClear(INT_EDGE_DETECT);
+		HWREG(GPIO_BASE + GPIO_O_EVFLAGS31_0) = pin_mask;		/* Clear the interrupt flags */																	/* Clear pending interrupts */
+		g_button_pressed = true;
 	}
 
 	/* Clear the interrupt flags */

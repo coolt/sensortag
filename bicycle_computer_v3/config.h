@@ -16,8 +16,6 @@
 #define BUTTON						BOARD_IOID_KEY_RIGHT     // IOID_4
 
 
-/*
-#define IO_E  IOID_4 */
 
 // RTC wakeup interval
 // --------------------
@@ -40,7 +38,7 @@ extern long g_current_energy_state;
 
 //* Speed measurement
 // -----------------
-extern uint32_t g_timestamp1, g_timestamp2, g_time_ms;
+extern uint32_t g_timestamp1, g_timestamp2;
 extern bool g_measurement_done;
 
 
@@ -61,3 +59,4 @@ extern bool g_button_pressed;
 // -------
 extern bool g_pressure_set;
 extern uint16_t g_pressure;
+

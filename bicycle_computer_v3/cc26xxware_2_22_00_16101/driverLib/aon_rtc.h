@@ -1,38 +1,5 @@
 /******************************************************************************
-*  Filename:       aon_rtc.h
-*  Revised:        2015-07-16 12:12:04 +0200 (Thu, 16 Jul 2015)
-*  Revision:       44151
 *
-*  Description:    Defines and prototypes for the AON RTC
-*
-*  Copyright (c) 2015, Texas Instruments Incorporated
-*  All rights reserved.
-*
-*  Redistribution and use in source and binary forms, with or without
-*  modification, are permitted provided that the following conditions are met:
-*
-*  1) Redistributions of source code must retain the above copyright notice,
-*     this list of conditions and the following disclaimer.
-*
-*  2) Redistributions in binary form must reproduce the above copyright notice,
-*     this list of conditions and the following disclaimer in the documentation
-*     and/or other materials provided with the distribution.
-*
-*  3) Neither the name of the ORGANIZATION nor the names of its contributors may
-*     be used to endorse or promote products derived from this software without
-*     specific prior written permission.
-*
-*  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-*  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-*  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-*  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-*  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-*  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-*  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-*  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-*  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-*  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-*  POSSIBILITY OF SUCH DAMAGE.
 *
 ******************************************************************************/
 
@@ -154,14 +121,14 @@ extern "C"
 //! \sa AONRTCChannelEnable()
 //
 //*****************************************************************************
-__STATIC_INLINE void
-AONRTCEnable(void)
+__STATIC_INLINE void AONRTCEnable(void)
 {
     //
     // Enable RTC.
     //
     HWREGBITW(AON_RTC_BASE + AON_RTC_O_CTL, AON_RTC_CTL_EN_BITN) = 1;
 }
+
 
 //*****************************************************************************
 //
@@ -177,8 +144,7 @@ AONRTCEnable(void)
 //! \sa AONRTCChannelDisable()
 //
 //*****************************************************************************
-__STATIC_INLINE void
-AONRTCDisable(void)
+__STATIC_INLINE void AONRTCDisable(void)
 {
     //
     // Disable RTC
@@ -195,8 +161,7 @@ AONRTCDisable(void)
 //! \return None
 //
 //*****************************************************************************
-__STATIC_INLINE void
-AONRTCReset(void)
+__STATIC_INLINE void AONRTCReset(void)
 {
     //
     // Reset RTC.
@@ -213,8 +178,7 @@ AONRTCReset(void)
 //! - true  : RTC is enabled
 //
 //*****************************************************************************
-__STATIC_INLINE bool
-AONRTCActive(void)
+__STATIC_INLINE bool AONRTCActive(void)
 {
     // Read if RTC is enabled
     return(HWREGBITW(AON_RTC_BASE + AON_RTC_O_CTL, AON_RTC_CTL_EN_BITN));
@@ -235,8 +199,7 @@ AONRTCActive(void)
 //! - true  : Channel is enabled
 //
 //*****************************************************************************
-__STATIC_INLINE bool
-AONRTCChannelActive(uint32_t ui32Channel)
+__STATIC_INLINE bool AONRTCChannelActive(uint32_t ui32Channel)
 {
     uint32_t uint32Status = 0;
 
@@ -447,8 +410,7 @@ AONRTCEventGet(uint32_t ui32Channel)
 //! \sa \ref AONRTCFractionGet() \ref AONRTCCurrentCompareValueGet()
 //
 //*****************************************************************************
-__STATIC_INLINE uint32_t
-AONRTCSecGet(void)
+__STATIC_INLINE uint32_t AONRTCSecGet(void)
 {
     //
     // The following read gets the seconds, but also latches the fractional
@@ -477,9 +439,7 @@ AONRTCSecGet(void)
 //! \sa \ref AONRTCSecGet() \ref AONRTCCurrentCompareValueGet()
 //
 //*****************************************************************************
-__STATIC_INLINE uint32_t
-AONRTCFractionGet(void)
-{
+__STATIC_INLINE uint32_t AONRTCFractionGet(void) {
     //
     // Note1: It is recommended to use AON RTCCurrentCompareValueGet() instead
     //        of this function if the <16.16> format is sufficient.
@@ -732,8 +692,7 @@ AONRTCChannelDisable(uint32_t ui32Channel)
 //! \sa AONRTCCurrentCompareValueGet()
 //
 //*****************************************************************************
-__STATIC_INLINE void
-AONRTCCompareValueSet(uint32_t ui32Channel, uint32_t ui32CompValue)
+__STATIC_INLINE void AONRTCCompareValueSet(uint32_t ui32Channel, uint32_t ui32CompValue)
 {
     // Check the arguments.
     ASSERT((ui32Channel == AON_RTC_CH0) ||
@@ -771,8 +730,7 @@ AONRTCCompareValueSet(uint32_t ui32Channel, uint32_t ui32CompValue)
 //! \return Returns the stored compare value for the given channel.
 //
 //*****************************************************************************
-__STATIC_INLINE uint32_t
-AONRTCCompareValueGet(uint32_t ui32Channel)
+__STATIC_INLINE uint32_t AONRTCCompareValueGet(uint32_t ui32Channel)
 {
     uint32_t ui32Value = 0;
 
