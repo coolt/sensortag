@@ -262,11 +262,11 @@ void sleep(){
 
 int main(void) {
 
-	/*
+
 	initSensortag();
 	CPUcpsie();												// All extern interrupts enable (globaly)
 	g_timestamp1 = 0; 										// bei init löst sich Reed Int erstesmal von selbst aus
-	*/
+
 
 	initSPI();   // !! noch zu lang. mit JTAG aus und  Power on
 	configureEM8500();
@@ -275,11 +275,11 @@ int main(void) {
 	while(1) {
 
 		// wait for interrupts
-		/*	getData();
+		getData();
 		setData();
 		sendData();
 		sleep();
-		*/
+
 	}
 	}
 
