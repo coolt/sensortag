@@ -228,7 +228,7 @@ void AONRTCIntHandler(void) {
 	if(AONRTCEventGet(AON_RTC_CH0)){
 		AONRTCEventClear(AON_RTC_CH0);		 // Clear RTC 0 event flag
 		AONRTCCompareValueSet(AON_RTC_CH0, AONRTCCompareValueGet(AON_RTC_CH0)+(g_current_wake_up_time));  // set new wake up time
-		//AONRTCCompareValueSet(AON_RTC_CH0, AONRTCCompareValueGet(AON_RTC_CH0)+(WAKE_INTERVAL_HIGH_ENERGY));  // set new wake up time
+
 	}
 	// Speed measurement Timer
 	// -----------------------
@@ -254,8 +254,9 @@ void GPIOIntHandler(void){
 	pin_mask = (HWREG(GPIO_BASE + GPIO_O_EVFLAGS31_0) & GPIO_PIN_MASK);				/* Read interrupt flags */
 
 	// wait because Edge is bouncing for approx. 3 ms
-	CPUdelay(10000); 						// 10 ms
-
+	CPUdelay(10000); 						// 10 ms								// 40 km/h  => alle 90 ms eine halbe Umdrehung
+																					// 80 km/h  => 47 ms
+																					// 100 km/h => 37 ms
 	// handling ********************************
 
 	// Reed-Pin for speed measuring

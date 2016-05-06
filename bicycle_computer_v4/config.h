@@ -59,7 +59,7 @@ extern bool g_measurement_done;
 //* Radio data
 // ------------
 // Length of Data-Block (inclusive length, type, uuid)
-#define ADVLEN 16
+#define ADVLEN 18
 
 extern char payload[ADVLEN]; 						// data buffer
 extern volatile bool rfBootDone;					// communication flag

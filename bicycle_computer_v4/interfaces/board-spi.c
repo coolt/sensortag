@@ -42,7 +42,7 @@
  */
 
 /*---------------------------------------------------------------------------*/
-static bool accessible(void)
+bool accessible(void)
 {
   /* First, check the PD */
   if(ti_lib_prcm_power_domain_status(PRCM_DOMAIN_SERIAL)

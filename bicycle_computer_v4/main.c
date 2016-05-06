@@ -15,8 +15,8 @@
 #include "sensor-common.h"
 #include "ext-flash.h"
 #include "bmp-280-sensor.h"				// barometric pressure
-#include "tmp-007-sensor.h"
-#include "hdc-1000-sensor.h"			// Humitiy
+#include "tmp-007-sensor.h"				// temperature
+#include "hdc-1000-sensor.h"			//  Humitiy
 #include "opt-3001-sensor.h"
 
 // GPIO
@@ -262,26 +262,29 @@ void sleep(){
 
 int main(void) {
 
-
+    /*
 	initSensortag();
 	CPUcpsie();												// All extern interrupts enable (globaly)
 	g_timestamp1 = 0; 										// bei init löst sich Reed Int erstesmal von selbst aus
-
+	*/
 
 	initSPI();   // !! noch zu lang. mit JTAG aus und  Power on
-	configureEM8500();
+
 
 	// interrupt driven application
 	while(1) {
 
+		configureEM8500();
+
 		// wait for interrupts
+		/*
 		getData();
 		setData();
 		sendData();
 		sleep();
-
+		*/
 	}
-	}
+}
 
 
 

@@ -15,6 +15,10 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
+
+
+bool accessible(void);
+
 /*---------------------------------------------------------------------------*/
 /**
  * \brief Initialize the SPI interface

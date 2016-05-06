@@ -9,6 +9,7 @@ void initBLEBuffer(void);
 void initGPIOInterrupts(void);
 void initRFInterrupts(void);
 void initSPI(void);								// incl. JTAG off and Power on
+void initSensors(void);
 
 // Interrupt-Function
 void start_RTC_speedMeasurement(uint32_t ms); 	// setRTC0  (can not be initalized)
