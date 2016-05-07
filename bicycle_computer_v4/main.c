@@ -116,7 +116,7 @@ void getData(void){
 	// LOW:  no sensorts
 	// MIDDLE: only one sensor, but each time a new one (ringbuffer-system)
 	// HIGH: read all sensors
-/*	if(g_current_energy_state == MIDDLE_ENERGY ){
+	if(g_current_energy_state == MIDDLE_ENERGY ){
 
 		static int g_ringbuffer = 0;
 
@@ -145,7 +145,7 @@ void getData(void){
 		start_hdc_1000(); // ???????????????????????????????????????????????????????????????
 		g_humidity_active = true;
 	}
-	*/
+
 }
 
 
@@ -156,6 +156,7 @@ void setData(void){
 	// after 2 RTC_CH2 interrupts, time measuring is done
 	if(g_measurement_done){
 		uint32_t timeFromRegister = getTime();
+		timeFromRegister = 0x11111111;					// debugging
 
 		// extract bytes
 		uint8_t higherSeconds    = (timeFromRegister >> 24) & 0x000000FF;
@@ -172,8 +173,29 @@ void setData(void){
 		g_measurement_done = false;
 	}
 
-	if(g_temp_active){
+	else if(g_pressure_set){
+			int pressure = value_bmp_280(BMP_280_SENSOR_TYPE_TEMP);
+			pressure = 0x22222222;
+
+			// extract bytes
+			uint8_t higherSeconds    = (pressure >> 24) & 0x000000FF;
+			uint8_t lowerSeconds     = (pressure >> 16) & 0x000000FF;
+			uint8_t higherSubSeconds = (pressure >> 8) & 0x000000FF;
+			uint8_t lowerSubSeconds  = pressure  & 0x000000FF;
+
+			// set current time to BLE-buffer
+			payload[10] =  (char) higherSeconds;
+			payload[11] =  (char) lowerSeconds;
+			payload[12] =  (char) higherSubSeconds;
+			payload[13] =  (char) lowerSubSeconds;
+
+			g_pressure_set = false;
+		}
+
+
+	else if(g_temp_active){
 		int temp = value_tmp_007(TMP_007_SENSOR_TYPE_ALL);				// -> temp-007-sensor.c
+		temp = 0x33333333;
 
 		// extract bytes
 		uint8_t higherSeconds    = (temp >> 24) & 0x000000FF;
@@ -190,26 +212,9 @@ void setData(void){
 		g_temp_active = false;
 		}
 
-	else if(g_pressure_set){
-		int pressure = value_bmp_280(BMP_280_SENSOR_TYPE_TEMP);
-
-		// extract bytes
-		uint8_t higherSeconds    = (pressure >> 24) & 0x000000FF;
-		uint8_t lowerSeconds     = (pressure >> 16) & 0x000000FF;
-		uint8_t higherSubSeconds = (pressure >> 8) & 0x000000FF;
-		uint8_t lowerSubSeconds  = pressure  & 0x000000FF;
-
-		// set current time to BLE-buffer
-		payload[10] =  (char) higherSeconds;
-		payload[11] =  (char) lowerSeconds;
-		payload[12] =  (char) higherSubSeconds;
-		payload[13] =  (char) lowerSubSeconds;
-
-		g_pressure_set = false;
-	}
-
 	else if(g_humidity_active){
 			int humidity = value_hdc_1000(HDC_1000_SENSOR_TYPE_HUMIDITY);
+			humidity = 0x44444444;
 
 			// extract bytes
 			uint8_t higherSeconds    = (humidity >> 24) & 0x000000FF;
