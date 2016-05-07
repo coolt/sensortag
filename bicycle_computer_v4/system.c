@@ -37,7 +37,9 @@
 
 // globale variable
 uint32_t g_timestamp1, g_timestamp2;
-
+bool g_pressure_set;					// pressure sensor state
+bool g_temp_active;
+bool g_humidity_acitve;
 
 void initWUCEvent(){
 
@@ -58,13 +60,7 @@ void initRTCInterrupts(void) {
 	AONRTCCompareValueSet(AON_RTC_CH0, WAKE_INTERVAL_MIDDLE_ENERGY); 		// Inital Wake up value  (= 10 s)
 	AONRTCChannelEnable(AON_RTC_CH0);										// Enable channel 0
 
-/*	// Ch 2: Speed Meausrement  -> init by calling
-	// -----------------------
-	AONRTCCompareValueSet(AON_RTC_CH2, WAKE_INTERVAL_MIDDLE_ENERGY);		// Set RTC ch2 initial compare value: erster Intrupt, der ausgelöst wird
-	AONRTCIncValueCh2Set(WAKE_INTERVAL_MIDDLE_ENERGY);						// Set RTC ch 2 auto increment: Nach welcher Zeit der zweite Interrupt ausgelöst wird
-	AONRTCModeCh2Set(AON_RTC_MODE_CH2_CONTINUOUS);							// Set RTC CH 2 to auto increment mode ??????
-	AONRTCChannelEnable(AON_RTC_CH2);										// Enable channel 2
-*/
+	// Ch 2: Speed Meausrement  -> init by calling
 
 	// Enable RTC
 	AONRTCEnable();
@@ -73,15 +69,14 @@ void initRTCInterrupts(void) {
 
 void initGPIOInterrupts(void){
 
-	 // Config IOID4 for external interrupt on rising edge and wake up
-	 IOCPortConfigureSet(BOARD_IOID_KEY_RIGHT, IOC_PORT_GPIO, IOC_IOMODE_NORMAL | IOC_FALLING_EDGE | IOC_INT_ENABLE | IOC_IOPULL_UP | IOC_INPUT_ENABLE | IOC_WAKE_ON_LOW);
+	// Config IOID4 for external interrupt on rising edge and wake up
+	IOCPortConfigureSet(BOARD_IOID_KEY_RIGHT, IOC_PORT_GPIO, IOC_IOMODE_NORMAL | IOC_FALLING_EDGE | IOC_INT_ENABLE | IOC_IOPULL_UP | IOC_INPUT_ENABLE | IOC_WAKE_ON_LOW);
 
 
 	// REED_SWITCH = IOID_25, external interrupt on rising edge and wake up
-	//IOCPortConfigureSet(REED_SWITCH, IOC_PORT_GPIO, IOC_IOMODE_NORMAL | IOC_FALLING_EDGE | IOC_INT_ENABLE | IOC_IOPULL_UP | IOC_INPUT_ENABLE | IOC_WAKE_ON_LOW);
-	 IOCPortConfigureSet(REED_SWITCH, IOC_PORT_GPIO, IOC_IOMODE_NORMAL | IOC_RISING_EDGE | IOC_INT_ENABLE | IOC_IOPULL_DOWN | IOC_INPUT_ENABLE | IOC_WAKE_ON_HIGH);
+	IOCPortConfigureSet(REED_SWITCH, IOC_PORT_GPIO, IOC_IOMODE_NORMAL | IOC_RISING_EDGE | IOC_INT_ENABLE | IOC_IOPULL_DOWN | IOC_INPUT_ENABLE | IOC_WAKE_ON_HIGH);
 
-	 // BAT_LOW = IOID_28, external interrupt on rising edge and wake up
+	// BAT_LOW = IOID_28, external interrupt on rising edge and wake up
 	IOCPortConfigureSet(BAT_LOW, IOC_PORT_GPIO, IOC_IOMODE_NORMAL | IOC_FALLING_EDGE | IOC_INT_ENABLE | IOC_IOPULL_UP | IOC_INPUT_ENABLE | IOC_WAKE_ON_LOW);
 
 	// Clear GPIO Register
@@ -100,16 +95,15 @@ void initRFInterrupts(void) { // hiess vorher: initInterrupts
 	// RTC combined event output
 	HWREG(NVIC_EN0) = 1 << (INT_AON_RTC - 16);
 
-	// RFC Int enable: (baek, temporary) See rfc.h
-	// RFCCpe0IntEnable(uint32_t ui32Mask);   // Enable CPE0 Interrupt
 }
 
 void initSensors(void){
 
-	// enable sensors
-	configure_bmp_280(1);
-	configure_tmp_007(1);
-	ext_flash_init(); 	//includes power down instruction
+	// set IO (without enableing)				-> ..-sensor.c
+	configure_bmp_280(0);
+	configure_tmp_007(0);
+	init_hdc_1000();
+	ext_flash_init(); 							//includes power down instruction
 
 	// Power down not needed Sensors
 	// Gyro
@@ -121,15 +115,18 @@ void initSensors(void){
 	// OPT3001
 	configure_opt_3001(0);
 
-
-
+	/*
 	//Power off Serial domain (Powered on in sensor configurations!)
 	PRCMPowerDomainOff(PRCM_DOMAIN_SERIAL);
 	while((PRCMPowerDomainStatus(PRCM_DOMAIN_SERIAL) != PRCM_DOMAIN_POWER_OFF));
 
 	//Shut down I2C
 	board_i2c_shutdown();
+ */
 
+	g_temp_active = false;
+	g_pressure_set = false;
+	g_humidity_acitve = false;
 
 }
 
@@ -140,10 +137,10 @@ void initSensors(void){
 // BLE-Packet = 62 bytes, therefore 37 bytes of data (in payloadbuffer)
 void initBLEBuffer(void){
 
-	memset(payload, 0, ADVLEN); 											// Clear payload buffer
+	memset(payload, 0, ADVLEN); 											// Clear payload buffer (ADVLEN = 24)
 
 	//header:
-	payload[0] = ADVLEN - 1; 												// length = ADV-Length - 1 (1 Byte)
+	payload[0] = ADVLEN - 1; 												// length = ADV-Length - 1 (1 Byte) = 23 Bytes
 	payload[1] = 0x03; 														// Type (1 Byte)  =>   0x03 = UUID -> immer 2 Bytes
 	payload[2] = 0xDE; 														// UUID (2 Bytes) =>   0xDE00 (UUID im Ines)
 	payload[3] = 0xBA;
@@ -157,14 +154,24 @@ void initBLEBuffer(void){
 	payload[9] = 0;															// miliseconds: lower byte
 
 	// sensors
-	payload[10] = 0;														// Sensor 1: Druck
+	payload[10] = 0;														// Sensor 1: Druck (4 bytes)
 	payload[11] = 0;
-	payload[12] = 0;														// Sensor 2: Temperatur
+	payload[12] = 0;
 	payload[13] = 0;
 
-	// check
-	payload[14] = 0;														// Checksumme: 2^17: Laufnummer + Checksumme = 0 (Überlauf)
+	payload[14] = 0;														// Sensor 2: Temperatur (4 bytes)
 	payload[15] = 0;
+	payload[16] = 0;
+	payload[17] = 0;
+
+	payload[18] = 0;														// Sensor 3: Feuchtigkeit (4 bytes)
+	payload[19] = 0;
+	payload[20] = 0;
+	payload[21] = 0;
+
+	// check
+	payload[22] = 0;														// Checksumme: Laufnummer + Checksumme = 0 (Überlauf)
+	payload[23] = 0;
 
 }
 
@@ -204,50 +211,8 @@ uint32_t getTime(void){
 
 // **********************************************************************************************
 
-void sensorsInit(void)
-{
-	// biometric pressure senosor
-	configure_bmp_280(0);
 
-	//Turn off TMP007
-    configure_tmp_007(0);
-
-	//Power down Gyro
-	// IOCPinTypeGpioOutput(IOID_12); // github 26. Nov 15
-	// GPIOPinClear(1 << IOID_12);		// github 26. Nov 15
-	IOCPinTypeGpioOutput(BOARD_IOID_MPU_POWER); // dario
-	GPIOPinClear(BOARD_MPU_POWER); // dario
-
-	//Power down Mic
-	IOCPinTypeGpioOutput(BOARD_IOID_MIC_POWER);
-	GPIOPinClear(1 << BOARD_IOID_MIC_POWER);
-
-	//Turn off external flash
-	ext_flash_init(); //includes power down instruction
-
-	//Turn off OPT3001
-	configure_opt_3001(0);
-
-	configure_bmp_280(0);
-
-	//Power off Serial domain (Powered on in sensor configurations!)
-	PRCMPowerDomainOff(PRCM_DOMAIN_SERIAL);
-	while((PRCMPowerDomainStatus(PRCM_DOMAIN_SERIAL) != PRCM_DOMAIN_POWER_OFF));
-
-	//Shut down I2C
-	// board_i2c_shutdown();
-}
-
-void ledInit(void)
-{
-	IOCPinTypeGpioOutput(BOARD_IOID_LED_1); //LED1
-	IOCPinTypeGpioOutput(BOARD_IOID_LED_2); //LED2
-
-	GPIOPinClear(BOARD_LED_1);
-	GPIOPinClear(BOARD_LED_2);
-}
-
-
+/*
 void initSPI(void){
 
 	// power off
@@ -263,7 +228,8 @@ void initSPI(void){
 
 	//initWUCEvent();  // SPI not added yet
 
-}
+//}
+
 // **********************************************************************************************
 
 void powerEnableAuxForceOn(void) {
@@ -385,16 +351,18 @@ void powerEnableXtalInterface(void) {
   HWREG(AUX_WUC_BASE + AUX_WUC_O_MODCLKEN0) |= AUX_WUC_OSCCTRL_CLOCK;
 }
 
-
+/*
 void powerEnableSPIdomain(void){
 	PRCMDomainEnable(PRCM_DOMAIN_SERIAL);    // enable domain
 	HWREG(PRCM_BASE + PRCM_O_SSICLKGR) & PRCM_SSICLKGR_CLK_EN_SSI0; // enable clock
 }
 
+
 void powerDisableSPIdomain(void){
 	PRCMDomainDisable(PRCM_DOMAIN_SERIAL);
 
 }
+*/
 // **********************************************
 
 void waitUntilRFCReady(void) {

@@ -26,6 +26,9 @@ uint8_t em8500_config_data[EM_CONFIG_BUFFER_LENGTH ];
 
 #define VALUE_T_HRV_PERIOD			0x44 // just for test
 
+
+void configureEM8500(void);
+
 // imported values from read out em8500 config (PA)
 /*
 em8500_config_data[40] = 0x06;					// check: spi-read 32 bit, here buffer of 8 bits

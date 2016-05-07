@@ -44,7 +44,9 @@ volatile bool rfSetupDone;
 volatile bool rfAdvertisingDone;
 bool g_button_pressed;
 bool g_pressure_set;					// pressure sensor state
-uint16_t g_pressure;
+bool g_temp_active;
+bool g_humidity_active;
+uint16_t g_pressure;  					// ?????? variable for value ?
 uint8_t spiBuffer[SPI_BUFFER_LENGTH];
 
 // ------------------------------
@@ -65,10 +67,9 @@ void initSensortag(void){
 		while((PRCMPowerDomainStatus(PRCM_DOMAIN_PERIPH) != PRCM_DOMAIN_POWER_ON)); /* Wait for domains to power on */
 
 		// Configuartions
-		sensorsInit();											// Enable needed Sensors
 		initRadio();											// Set Communicationmode = BLE, Channels = 3, Advertising modus
-		ledInit();
 		initBLEBuffer(); 										// Set default structure
+		initSensors(); 											// Define IOC and enable sensor
 
 		// Configure Interrupts
 		initWUCEvent();											// Ch0 = RTC2, Ch1 = all GPIO, Ch2 = RTC0
@@ -83,7 +84,6 @@ void initSensortag(void){
 //		AONRTCEnable();											// PA: Enable RTC
 
 		// power off and set Refresh on
-		// -- moved functions from in the middle of interrupt settings
 		powerDisablePeriph(); //Disable clock for GPIO in CPU run mode
 		HWREGBITW(PRCM_BASE + PRCM_O_GPIOCLKGR, PRCM_GPIOCLKGR_CLK_EN_BITN) = 0;
 		HWREGBITW(PRCM_BASE + PRCM_O_CLKLOADCTL, PRCM_CLKLOADCTL_LOAD_BITN) = 1; // Load clock settings
@@ -103,7 +103,6 @@ void getData(void){
 	// ---------------------------------------------
 
 	// start system
-	// powerEnableRFC();
 	powerEnableAuxForceOn(); // ??????????????????????' not done in RTC interrupt ??
 	powerEnableCache(); // ?????  Wann notwendig ?? immer
 
@@ -112,16 +111,41 @@ void getData(void){
 	g_current_energy_state = getEnergyStateFromSPI();
 	updateRTCWakeUpTime(g_current_energy_state);
 
-	// read reed switch twice
-	// ----------------------
-	//  wait until interrupt set timestamps
-/*	if(g_measurement_done){
 
-		// calculate time-difference
-		uint32_t g_time_ms = getTime();
-		g_time_ms = 0x11223344;
+	// read sensors acording to the energy state
+	// LOW:  no sensorts
+	// MIDDLE: only one sensor, but each time a new one (ringbuffer-system)
+	// HIGH: read all sensors
+/*	if(g_current_energy_state == MIDDLE_ENERGY ){
+
+		static int g_ringbuffer = 0;
+
+		if(g_ringbuffer == 0){
+			enable_bmp_280(1);
+			g_pressure_set = true;
+			g_ringbuffer ++;
+		}
+		else if (g_ringbuffer == 1){
+			enable_tmp_007(1);
+			g_temp_active = true;
+			g_ringbuffer ++;
+		}
+		else if(g_ringbuffer == 2){
+			start_hdc_1000(); // ???????????????????????????????????????????????????????????????
+			g_temp_active = true;
+			g_ringbuffer++;
+		}
+	} // end MIDDLE ENERGY
+
+	else if (g_current_energy_state == HIGH_ENERGY ){
+		enable_tmp_007(1);
+		g_pressure_set = true;
+		enable_bmp_280(1);
+		g_temp_active = true;
+		start_hdc_1000(); // ???????????????????????????????????????????????????????????????
+		g_humidity_active = true;
 	}
-*/
+	*/
 }
 
 
@@ -130,8 +154,7 @@ void setData(void){
 	// Wait for interrupts for data
 
 	// after 2 RTC_CH2 interrupts, time measuring is done
-	if(g_measurement_done == true){
-
+	if(g_measurement_done){
 		uint32_t timeFromRegister = getTime();
 
 		// extract bytes
@@ -140,35 +163,81 @@ void setData(void){
 		uint8_t higherSubSeconds = (timeFromRegister >> 8) & 0x000000FF;
 		uint8_t lowerSubSeconds  = timeFromRegister  & 0x000000FF;
 
-
 		// set current time to BLE-buffer
-		payload[4] =  (char) higherSeconds;
-		payload[5] =  (char) lowerSeconds;
-		payload[6] =  (char) higherSubSeconds;
-		payload[7] =  (char) lowerSubSeconds;
+		payload[6] =  (char) higherSeconds;
+		payload[7] =  (char) lowerSeconds;
+		payload[8] =  (char) higherSubSeconds;
+		payload[9] =  (char) lowerSubSeconds;
 
 		g_measurement_done = false;
-
 	}
 
-	else if(g_pressure_set == true){
+	if(g_temp_active){
+		int temp = value_tmp_007(TMP_007_SENSOR_TYPE_ALL);				// -> temp-007-sensor.c
 
-		// payload[8] =  g_pressure & 0x00FF;
-		// payload[9] =  (g_pressure >> 8) & 0x00FF;
-		payload[8] =  7;
-		payload[9] =  7;
+		// extract bytes
+		uint8_t higherSeconds    = (temp >> 24) & 0x000000FF;
+		uint8_t lowerSeconds     = (temp >> 16) & 0x000000FF;
+		uint8_t higherSubSeconds = (temp >> 8) & 0x000000FF;
+		uint8_t lowerSubSeconds  = temp  & 0x000000FF;
 
-		g_pressure_set == false;
+		// set current time to BLE-buffer
+		payload[14] =  (char) higherSeconds;
+		payload[15] =  (char) lowerSeconds;
+		payload[16] =  (char) higherSubSeconds;
+		payload[17] =  (char) lowerSubSeconds;
+
+		g_temp_active = false;
+		}
+
+	else if(g_pressure_set){
+		int pressure = value_bmp_280(BMP_280_SENSOR_TYPE_TEMP);
+
+		// extract bytes
+		uint8_t higherSeconds    = (pressure >> 24) & 0x000000FF;
+		uint8_t lowerSeconds     = (pressure >> 16) & 0x000000FF;
+		uint8_t higherSubSeconds = (pressure >> 8) & 0x000000FF;
+		uint8_t lowerSubSeconds  = pressure  & 0x000000FF;
+
+		// set current time to BLE-buffer
+		payload[10] =  (char) higherSeconds;
+		payload[11] =  (char) lowerSeconds;
+		payload[12] =  (char) higherSubSeconds;
+		payload[13] =  (char) lowerSubSeconds;
+
+		g_pressure_set = false;
 	}
 
-	else if(g_button_pressed == true){
+	else if(g_humidity_active){
+			int humidity = value_hdc_1000(HDC_1000_SENSOR_TYPE_HUMIDITY);
+
+			// extract bytes
+			uint8_t higherSeconds    = (humidity >> 24) & 0x000000FF;
+			uint8_t lowerSeconds     = (humidity >> 16) & 0x000000FF;
+			uint8_t higherSubSeconds = (humidity >> 8) & 0x000000FF;
+			uint8_t lowerSubSeconds  = humidity  & 0x000000FF;
+
+			// set current time to BLE-buffer
+			payload[18] =  (char) higherSeconds;
+			payload[19] =  (char) lowerSeconds;
+			payload[20] =  (char) higherSubSeconds;
+			payload[21] =  (char) lowerSubSeconds;
+
+			g_pressure_set = false;
+		}
+
+
+	// to del: only for debugging (set values in check-value buffer)
+	else if(g_button_pressed){
 
 		// check bytes
-		payload[14] =  0xEE;
-		payload[15] =  0xFF;
+		payload[22] =  0xEE;
+		payload[23] =  0xFF;
 
 		g_button_pressed = false;
 	}
+
+	// no new data to send: clear buffer
 	else {
 		payload[4]  =  (char) 0x0;
 		payload[5]  =  (char) 0x0;
@@ -182,10 +251,18 @@ void setData(void){
 		payload[13] =  (char) 0x0;
 		payload[14] =  (char) 0x0;
 		payload[15] =  (char) 0x0;
+		payload[16] =  (char) 0x0;
+		payload[17] =  (char) 0x0;
+		payload[18] =  (char) 0x0;
+		payload[19] =  (char) 0x0;
+		payload[20] =  (char) 0x0;
+		payload[21] =  (char) 0x0;
+		payload[22] =  (char) 0x0;
+		payload[23] =  (char) 0x0;
 	}
 
 	//Start radio setup and linked advertisment
-	radioUpdateAdvData(16, payload); 			//Update advertising byte based on IO inputs
+	radioUpdateAdvData((ADVLEN-1), payload); 			// Update advertising byte based on IO inputs
 }
 
 
@@ -262,27 +339,26 @@ void sleep(){
 
 int main(void) {
 
-    /*
+
 	initSensortag();
 	CPUcpsie();												// All extern interrupts enable (globaly)
 	g_timestamp1 = 0; 										// bei init löst sich Reed Int erstesmal von selbst aus
-	*/
 
-	initSPI();   // !! noch zu lang. mit JTAG aus und  Power on
+
+	//initSPI();   											// funktioniert nicht
 
 
 	// interrupt driven application
 	while(1) {
 
-		configureEM8500();
+		//configureEM8500();
 
 		// wait for interrupts
-		/*
 		getData();
 		setData();
 		sendData();
 		sleep();
-		*/
+
 	}
 }
 

@@ -58,8 +58,8 @@ extern bool g_measurement_done;
 
 //* Radio data
 // ------------
-// Length of Data-Block (inclusive length, type, uuid)
-#define ADVLEN 18
+// Length of Data-Block
+#define ADVLEN 24
 
 extern char payload[ADVLEN]; 						// data buffer
 extern volatile bool rfBootDone;					// communication flag
@@ -69,6 +69,7 @@ extern volatile bool rfAdvertisingDone;				// communication flag
 
 // sensor
 // -------
-extern bool g_pressure_set;
+extern bool g_pressure_set, g_humidity_active, g_temp_active;
 extern uint16_t g_pressure;
+
 
