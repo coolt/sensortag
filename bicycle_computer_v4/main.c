@@ -108,7 +108,7 @@ void getData(void){
 
 	// read STS, LTS to know Energy state
 	// ----------------------------------
-	g_current_energy_state = getEnergyStateFromSPI();
+	g_current_energy_state = getEnergyStateFromGPIO();
 	updateRTCWakeUpTime(g_current_energy_state);
 
 

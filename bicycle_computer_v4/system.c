@@ -177,7 +177,7 @@ void initBLEBuffer(void){
 
 // **********************************************************************************************
 
-long getEnergyStateFromSPI(void){
+long getEnergyStateFromGPIO(void){
 
 	g_current_energy_state = MIDDLE_ENERGY;
 
