@@ -45,7 +45,7 @@ void configureEM8500(){
 	if ( accessible() == true ){
 		board_spi_flush();							// clear data
 		board_spi_open(bit_rate, clk_pin);
-		board_spi_write(address_byte, 1);
+		board_spi_write((const uint8_t) &address_byte, 1);
 		board_spi_close();
 	}
 
