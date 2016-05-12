@@ -52,7 +52,7 @@ bool accessible(void)
 
   /* Then check the 'run mode' clock gate */
   if(!(HWREG(PRCM_BASE + PRCM_O_SSICLKGR) & PRCM_SSICLKGR_CLK_EN_SSI0)) {
-    return false;
+    return false;    // !! springt hier hinein
   }
 
   return true;

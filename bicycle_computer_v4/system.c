@@ -59,9 +59,17 @@ void initSPI(void){
 
 
 void powerEnableSPIdomain(void){
+
+	// power on GPIO (CS und andere Pins sind GPIO PIns)
+	powerEnablePeriph();
+	powerEnableGPIOClockRunMode();
+		while((PRCMPowerDomainStatus(PRCM_DOMAIN_PERIPH) != PRCM_DOMAIN_POWER_ON));
+
 	PRCMPowerDomainOn(PRCM_DOMAIN_SERIAL); 		// power on in MCU power domain  -> prcm.c
-	PRCMDomainEnable(PRCM_DOMAIN_SERIAL);    	// enable domain
-	HWREG(PRCM_BASE + PRCM_O_SSICLKGR) & PRCM_SSICLKGR_CLK_EN_SSI0; // enable clock
+	// PRCMDomainEnable(PRCM_DOMAIN_SERIAL);    // enable clk for domain    -> prcm.c
+	uint32_t debug = HWREG(PRCM_BASE + PRCM_O_SSICLKGR) & PRCM_SSICLKGR_CLK_EN_SSI0; // enable clock for SSI
+	HWREG(PRCM_BASE + PRCM_O_SSICLKGR) = 1;
+	// PRCM_SSICLKGR_CLK_EN_SSI0  = 1;			// geht nicht. ist define auf 0x000001
 }
 
 

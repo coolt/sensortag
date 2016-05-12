@@ -355,7 +355,7 @@ int main(void) {
 
 	// interrupt driven application
 	while(1) {
-
+		AONWUCJtagPowerOff(); 									//Disable JTAG to allow for Standby
 		configureEM8500();
 
 		// wait for interrupts
