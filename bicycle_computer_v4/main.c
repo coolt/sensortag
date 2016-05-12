@@ -123,6 +123,8 @@ void getData(void){
 		if(g_ringbuffer == 0){
 			enable_bmp_280(1);
 			g_pressure_set = true;
+			//int enable = 1;
+			configure_bmp_280(1); 				// init and enable (once more)
 			g_ringbuffer ++;
 		}
 		else if (g_ringbuffer == 1){
@@ -142,7 +144,7 @@ void getData(void){
 		g_pressure_set = true;
 		enable_bmp_280(1);
 		g_temp_active = true;
-		start_hdc_1000(); // ???????????????????????????????????????????????????????????????
+		start_hdc_1000(); // ?? check init if right
 		g_humidity_active = true;
 	}
 
@@ -174,7 +176,8 @@ void setData(void){
 	}
 
 	else if(g_pressure_set){
-			int pressure = value_bmp_280(BMP_280_SENSOR_TYPE_TEMP);
+			int pressure = value_bmp_280(BMP_280_SENSOR_TYPE_PRESS);  // in pascal
+			// int p = read_data_bmp_280(uint8_t *data);
 			pressure = 0x22222222;
 
 			// extract bytes
@@ -350,20 +353,17 @@ int main(void) {
 	g_timestamp1 = 0; 										// bei init löst sich Reed Int erstesmal von selbst aus
 
 
-	//initSPI();   											// funktioniert nicht
-
-
 	// interrupt driven application
 	while(1) {
 
-		//configureEM8500();
+		configureEM8500();
 
 		// wait for interrupts
-		getData();
+/*		getData();
 		setData();
 		sendData();
 		sleep();
-
+*/
 	}
 }
 

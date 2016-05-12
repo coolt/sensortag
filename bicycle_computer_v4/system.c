@@ -99,8 +99,10 @@ void initRFInterrupts(void) { // hiess vorher: initInterrupts
 
 void initSensors(void){
 
+
+
 	// set IO (without enableing)				-> ..-sensor.c
-	configure_bmp_280(0);
+	init_bmp_280();								// set up I2C for bmp, config and clear
 	configure_tmp_007(0);
 	init_hdc_1000();
 	ext_flash_init(); 							//includes power down instruction
@@ -212,11 +214,9 @@ uint32_t getTime(void){
 // **********************************************************************************************
 
 
-/*
+
 void initSPI(void){
 
-	// power off
-	//AONWUCJtagPowerOff(); 									//Disable JTAG to allow for Standby
 
 	// power on
 	powerEnableAuxForceOn(); 								// WUC domain
@@ -226,9 +226,9 @@ void initSPI(void){
 	powerEnableGPIOClockRunMode();
 	while((PRCMPowerDomainStatus(PRCM_DOMAIN_PERIPH) != PRCM_DOMAIN_POWER_ON)); /* Wait for domains to power on */
 
-	//initWUCEvent();  // SPI not added yet
+	//initWUCEvent();  // SPI not added
 
-//}
+}
 
 // **********************************************************************************************
 
@@ -351,7 +351,7 @@ void powerEnableXtalInterface(void) {
   HWREG(AUX_WUC_BASE + AUX_WUC_O_MODCLKEN0) |= AUX_WUC_OSCCTRL_CLOCK;
 }
 
-/*
+
 void powerEnableSPIdomain(void){
 	PRCMDomainEnable(PRCM_DOMAIN_SERIAL);    // enable domain
 	HWREG(PRCM_BASE + PRCM_O_SSICLKGR) & PRCM_SSICLKGR_CLK_EN_SSI0; // enable clock
@@ -362,7 +362,7 @@ void powerDisableSPIdomain(void){
 	PRCMDomainDisable(PRCM_DOMAIN_SERIAL);
 
 }
-*/
+
 // **********************************************
 
 void waitUntilRFCReady(void) {
