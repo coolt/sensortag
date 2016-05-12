@@ -18,6 +18,9 @@ uint32_t getTime(void);
 void calculateSpeed(uint32_t deltaTime);
 
 // power domain set up
+void powerEnableSPIdomain(void);
+void powerDisableSPIdomain(void);
+
 void powerEnableAuxForceOn(void);
 void powerDisableAuxForceOn(void);
 

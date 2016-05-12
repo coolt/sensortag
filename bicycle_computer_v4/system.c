@@ -34,12 +34,45 @@
 #include "opt-3001-sensor.h"
 #include "interfaces/board-i2c.h"
 
+// spi
+#include "cc26xxware_2_22_00_16101/driverLib/prcm.h"
 
 // globale variable
 uint32_t g_timestamp1, g_timestamp2;
 bool g_pressure_set;					// pressure sensor state
 bool g_temp_active;
 bool g_humidity_acitve;
+
+void initSPI(void){
+
+	// power on
+	powerEnableAuxForceOn(); 								// WUC domain
+	powerEnableXtalInterface(); 							// clk WUC
+	//powerDivideInfClkDS(PRCM_INFRCLKDIVDS_RATIO_DIV32); 	// Divide INF clk to save Idle mode power (increases interrupt latency)
+	powerEnablePeriph();
+	powerEnableGPIOClockRunMode();
+	while((PRCMPowerDomainStatus(PRCM_DOMAIN_PERIPH) != PRCM_DOMAIN_POWER_ON)); /* Wait for domains to power on */
+
+	//initWUCEvent();  // SPI not added
+
+}
+
+
+void powerEnableSPIdomain(void){
+	PRCMPowerDomainOn(PRCM_DOMAIN_SERIAL); 		// power on in MCU power domain  -> prcm.c
+	PRCMDomainEnable(PRCM_DOMAIN_SERIAL);    	// enable domain
+	HWREG(PRCM_BASE + PRCM_O_SSICLKGR) & PRCM_SSICLKGR_CLK_EN_SSI0; // enable clock
+}
+
+
+
+void powerDisableSPIdomain(void){
+	PRCMDomainDisable(PRCM_DOMAIN_SERIAL);
+
+}
+
+
+
 
 void initWUCEvent(){
 
@@ -215,20 +248,7 @@ uint32_t getTime(void){
 
 
 
-void initSPI(void){
 
-
-	// power on
-	powerEnableAuxForceOn(); 								// WUC domain
-	powerEnableXtalInterface(); 							// clk WUC
-	//powerDivideInfClkDS(PRCM_INFRCLKDIVDS_RATIO_DIV32); 	// Divide INF clk to save Idle mode power (increases interrupt latency)
-	powerEnablePeriph();
-	powerEnableGPIOClockRunMode();
-	while((PRCMPowerDomainStatus(PRCM_DOMAIN_PERIPH) != PRCM_DOMAIN_POWER_ON)); /* Wait for domains to power on */
-
-	//initWUCEvent();  // SPI not added
-
-}
 
 // **********************************************************************************************
 
@@ -352,16 +372,6 @@ void powerEnableXtalInterface(void) {
 }
 
 
-void powerEnableSPIdomain(void){
-	PRCMDomainEnable(PRCM_DOMAIN_SERIAL);    // enable domain
-	HWREG(PRCM_BASE + PRCM_O_SSICLKGR) & PRCM_SSICLKGR_CLK_EN_SSI0; // enable clock
-}
-
-
-void powerDisableSPIdomain(void){
-	PRCMDomainDisable(PRCM_DOMAIN_SERIAL);
-
-}
 
 // **********************************************
 
