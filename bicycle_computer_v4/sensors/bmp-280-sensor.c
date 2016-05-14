@@ -109,7 +109,7 @@ static uint8_t sensor_value[SENSOR_DATA_BUF_SIZE];
 /* Wait SENSOR_STARTUP_DELAY clock ticks for the sensor to be ready - ~80ms */
 #define SENSOR_STARTUP_DELAY 3
 
-/*---------------------------------------------------------------------------*/
+
 /* Platform-specific define to signify sensor reading failure */
 #define CC26XX_SENSOR_READING_ERROR        0x80000000
 
@@ -120,22 +120,9 @@ void select_bmp_280(void)
   board_i2c_select(BOARD_I2C_INTERFACE_0, BMP280_I2C_ADDRESS);
 }
 /*---------------------------------------------------------------------------*/
-/**
- * \brief Initalise the sensor
- */
-void init_bmp_280(void)
-{
-  uint8_t val;
 
-  select_bmp_280();
 
-  /* Read and store calibration data */
-  sensor_common_read_reg(ADDR_CALIB, calibration_data, CALIB_DATA_SIZE);
 
-  /* Reset the sensor */
-  val = VAL_RESET_EXECUTE;
-  sensor_common_write_reg(ADDR_RESET, &val, sizeof(val));
-}
 /*---------------------------------------------------------------------------*/
 /**
  * \brief Enable/disable measurements
@@ -147,7 +134,7 @@ void enable_bmp_280(bool enable)
 {
   uint8_t val;
 
-  select_bmp_280();
+  select_bmp_280();  // activate I2C for this sensor
 
   if(enable) {
     /* Enable forced mode */
@@ -257,17 +244,19 @@ int value_bmp_280(int type)
   int32_t temp = 0;
   uint32_t pres = 0;
 
-  if(enabled != SENSOR_STATUS_READY) {
+  /*
+  if(enabled != SENSOR_STATUS_READY) {   // sensor is not ready
     PRINTF("Sensor disabled or starting up (%d)\n", enabled);
     return CC26XX_SENSOR_READING_ERROR;
   }
+  */
 
   if((type != BMP_280_SENSOR_TYPE_TEMP) && type != BMP_280_SENSOR_TYPE_PRESS) {
     PRINTF("Invalid type\n");
     return CC26XX_SENSOR_READING_ERROR;
   } else {
     memset(sensor_value, 0, SENSOR_DATA_BUF_SIZE);
-
+    //sensor_common_read_reg(ADDR_PRESS_MSB, &buffer[0], 8);
     rv = read_data_bmp_280(sensor_value);
 
     if(rv == 0) {
@@ -308,3 +297,38 @@ int configure_bmp_280(int enable)
 }
 
 /** @} */
+
+/**
+ * \brief Initalise the sensor
+ */
+void init_bmp_280(void)                       // -> used in initSensors()
+{
+  uint8_t val;
+
+  select_bmp_280();     // I2C acitvate
+
+  /* Read and store calibration data */
+  sensor_common_read_reg(ADDR_CALIB, calibration_data, CALIB_DATA_SIZE);
+
+  /* Reset the sensor */
+  val = VAL_RESET_EXECUTE;
+  sensor_common_write_reg(ADDR_RESET, &val, sizeof(val));
+}
+
+/*
+ * our function: works
+ * better: take TI function read()
+ *
+ *
+
+void bmp_280_pressure_read(uint8_t * buffer){
+
+	uint8_t value = 0;
+
+	select_bmp_280();     // I2C acitvate
+
+	sensor_common_read_reg(ADDR_PRESS_MSB, &buffer[0], 8);
+	sensor_common_read_reg(ADDR_PRESS_LSB, &buffer[1], 8);
+	sensor_common_read_reg(ADDR_PRESS_XLSB, &buffer[2], 8);
+}
+*/

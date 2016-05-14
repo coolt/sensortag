@@ -190,13 +190,13 @@ int value_tmp_007(int type)
   rv = CC26XX_SENSOR_READING_ERROR;
 
   if(type == TMP_007_SENSOR_TYPE_ALL) {
-    rv = read_data_tmp_007(&raw_temp, &raw_obj_temp);
+    rv = read_data_tmp_007(&raw_temp, &raw_obj_temp);      // read()
 
     if(rv == 0) {
       return CC26XX_SENSOR_READING_ERROR;
     }
 
-    convert_tmp_007(raw_temp, raw_obj_temp, &obj_temp, &amb_temp);
+    convert_tmp_007(raw_temp, raw_obj_temp, &obj_temp, &amb_temp);  //convert
     PRINTF("TMP: %04X %04X       o=%d a=%d\n", raw_temp, raw_obj_temp,
            (int)(obj_temp * 1000), (int)(amb_temp * 1000));
 

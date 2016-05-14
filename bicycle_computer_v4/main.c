@@ -19,6 +19,18 @@
 #include "hdc-1000-sensor.h"			//  Humitiy
 #include "opt-3001-sensor.h"
 
+#define SENSOR_HUMIDITY_I2C_ADDRESS     0x43		// -> hdc-1000-sensor.c
+#define SENSOR_TEMPERATURE_I2C_ADDRESS  0x44		// temp-007-sensor.c
+#define SENSOR_PRESSURE_I2C_ADDRESS     0x77		// bmp-280-sensor.c
+
+#define TMP007_REG_ADDR_STATUS          0x04
+#define TMP_007_SENSOR_TYPE_AMBIENT   	2
+#define REGISTER_LENGTH                 2
+#define HI_UINT16(a) 					(((a) >> 8) & 0xFF)
+#define LO_UINT16(a) 					((a) & 0xFF)
+#define SWAP(v) 						((LO_UINT16(v) << 8) | HI_UINT16(v))
+#define CONV_RDY_BIT                    0x4000
+
 // GPIO
 #include "board.h"						// Konstanten IO
 #include <driverLib/gpio.h>				// Konstanten GPIO Pins
@@ -103,8 +115,8 @@ void getData(void){
 	// ---------------------------------------------
 
 	// start system
-	powerEnableAuxForceOn(); // ??????????????????????' not done in RTC interrupt ??
-	powerEnableCache(); // ?????  Wann notwendig ?? immer
+	powerEnableAuxForceOn();
+	powerEnableCache();
 
 	// read STS, LTS to know Energy state
 	// ----------------------------------
@@ -123,8 +135,25 @@ void getData(void){
 		if(g_ringbuffer == 0){
 			enable_bmp_280(1);
 			g_pressure_set = true;
-			//int enable = 1;
-			configure_bmp_280(1); 				// init and enable (once more)
+
+
+			/*
+			 * our written function (works theoreticaly)
+			 * -----------------------------------------
+			uint8_t pressure_data[3];
+			bmp_280_pressure_read(&pressure_data);
+			int temp0 = pressure_data[0];
+			int temp1 = pressure_data[1];
+			int temp2 = pressure_data[2];
+
+			/* function from TI
+			 * ----------------
+			bool status = false;
+			status = read_data_bmp_280(&pressure_data);
+
+			/* => function call in setData()
+			 * --------------------------
+            */
 			g_ringbuffer ++;
 		}
 		else if (g_ringbuffer == 1){
@@ -133,7 +162,7 @@ void getData(void){
 			g_ringbuffer ++;
 		}
 		else if(g_ringbuffer == 2){
-			start_hdc_1000(); // ?? this init is to check
+			// start_hdc_1000();
 			g_temp_active = true;
 			g_ringbuffer = 0;
 		}
@@ -144,7 +173,7 @@ void getData(void){
 		g_pressure_set = true;
 		enable_bmp_280(1);
 		g_temp_active = true;
-		start_hdc_1000(); // ?? check init if right
+		// start_hdc_1000();
 		g_humidity_active = true;
 	}
 
@@ -157,8 +186,9 @@ void setData(void){
 
 	// after 2 RTC_CH2 interrupts, time measuring is done
 	if(g_measurement_done){
-		uint32_t timeFromRegister = getTime();
-		timeFromRegister = 0x11111111;					// debugging
+
+		uint32_t timeFromRegister = 0;
+		timeFromRegister = getTime();
 
 		// extract bytes
 		uint8_t higherSeconds    = (timeFromRegister >> 24) & 0x000000FF;
@@ -176,9 +206,21 @@ void setData(void){
 	}
 
 	else if(g_pressure_set){
-			int pressure = value_bmp_280(BMP_280_SENSOR_TYPE_PRESS);  // in pascal
-			// int p = read_data_bmp_280(uint8_t *data);
-			pressure = 0x22222222;
+
+			uint32_t pressure = 0;
+			//uint32_t temperature = 0;
+
+			select_bmp_280();     				// activates I2C for bmp-sensor
+			enable_bmp_280(1);
+
+			/* function example TI
+			 * sensor_common_read_reg(ADDR_PRESS_MSB, &buffer[0], 8);
+			 */
+
+			do{
+				pressure = value_bmp_280(BMP_280_SENSOR_TYPE_PRESS);  //  read and converts in pascal (95'864 Pa = 0.9 bar ? )																	  // 101 325 Pa = 1 013,25 hPa ev.= 1 bar.
+				// temperature = value_bmp_280(BMP_280_SENSOR_TYPE_TEMP); // in centi degrees C  (3268 C)
+			}while(pressure == 0x80000000);
 
 			// extract bytes
 			uint8_t higherSeconds    = (pressure >> 24) & 0x000000FF;
@@ -193,18 +235,33 @@ void setData(void){
 			payload[13] =  (char) lowerSubSeconds;
 
 			g_pressure_set = false;
+			enable_bmp_280(0);
+			board_i2c_shutdown();
 		}
 
 
 	else if(g_temp_active){
-		int temp = value_tmp_007(TMP_007_SENSOR_TYPE_ALL);				// -> temp-007-sensor.c
-		temp = 0x33333333;
+
+		int temperature = 0;
+		board_i2c_wakeup();
+		enable_tmp_007(1);					// activates I2C
+		// board_i2c_select(BOARD_I2C_INTERFACE_0, SENSOR_TEMPERATURE_I2C_ADDRESS); 		// activate I2C
+
+		 do{
+		    	temperature = value_tmp_007(TMP_007_SENSOR_TYPE_AMBIENT);
+		    }while(temperature==0x80000000);
+		// int temp = value_tmp_007(TMP_007_SENSOR_TYPE_ALL);				// -> temp-007-sensor.c
+
+
+		 //sprintf(char_temp, "%3d",temperature/100);
+
+		 temperature = 0x33333333;
 
 		// extract bytes
-		uint8_t higherSeconds    = (temp >> 24) & 0x000000FF;
-		uint8_t lowerSeconds     = (temp >> 16) & 0x000000FF;
-		uint8_t higherSubSeconds = (temp >> 8) & 0x000000FF;
-		uint8_t lowerSubSeconds  = temp  & 0x000000FF;
+		uint8_t higherSeconds    = (temperature >> 24) & 0x000000FF;
+		uint8_t lowerSeconds     = (temperature >> 16) & 0x000000FF;
+		uint8_t higherSubSeconds = (temperature >> 8) & 0x000000FF;
+		uint8_t lowerSubSeconds  = temperature  & 0x000000FF;
 
 		// set current time to BLE-buffer
 		payload[14] =  (char) higherSeconds;
@@ -213,10 +270,26 @@ void setData(void){
 		payload[17] =  (char) lowerSubSeconds;
 
 		g_temp_active = false;
+		enable_tmp_007(0);
+		board_i2c_shutdown();
 		}
 
 	else if(g_humidity_active){
-			int humidity = value_hdc_1000(HDC_1000_SENSOR_TYPE_HUMIDITY);
+
+			int humidity = 0;
+
+			board_i2c_wakeup();
+			board_i2c_select(BOARD_I2C_INTERFACE_0, SENSOR_HUMIDITY_I2C_ADDRESS); 		// activate I2C
+
+			configure_hdc_1000();
+		    start_hdc_1000();
+
+		    // wait for reading value
+		    while(!read_data_hdc_1000());
+
+		    humidity = value_hdc_1000(HDC_1000_SENSOR_TYPE_HUMIDITY);
+		    // sprintf(char_hum, "%3d",humidity/10);
+
 			humidity = 0x44444444;
 
 			// extract bytes
@@ -232,6 +305,7 @@ void setData(void){
 			payload[21] =  (char) lowerSubSeconds;
 
 			g_pressure_set = false;
+			board_i2c_shutdown();
 		}
 
 
@@ -355,15 +429,16 @@ int main(void) {
 
 	// interrupt driven application
 	while(1) {
+		/*
 		AONWUCJtagPowerOff(); 									//Disable JTAG to allow for Standby
 		configureEM8500();
-
+ */
 		// wait for interrupts
-/*		getData();
+		getData();
 		setData();
 		sendData();
 		sleep();
-*/
+
 	}
 }
 

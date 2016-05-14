@@ -43,43 +43,6 @@ bool g_pressure_set;					// pressure sensor state
 bool g_temp_active;
 bool g_humidity_acitve;
 
-void initSPI(void){
-
-	// power on
-	powerEnableAuxForceOn(); 								// WUC domain
-	powerEnableXtalInterface(); 							// clk WUC
-	//powerDivideInfClkDS(PRCM_INFRCLKDIVDS_RATIO_DIV32); 	// Divide INF clk to save Idle mode power (increases interrupt latency)
-	powerEnablePeriph();
-	powerEnableGPIOClockRunMode();
-	while((PRCMPowerDomainStatus(PRCM_DOMAIN_PERIPH) != PRCM_DOMAIN_POWER_ON)); /* Wait for domains to power on */
-
-	//initWUCEvent();  // SPI not added
-
-}
-
-
-void powerEnableSPIdomain(void){
-
-	// power on GPIO (CS und andere Pins sind GPIO PIns)
-	powerEnablePeriph();
-	powerEnableGPIOClockRunMode();
-		while((PRCMPowerDomainStatus(PRCM_DOMAIN_PERIPH) != PRCM_DOMAIN_POWER_ON));
-
-	PRCMPowerDomainOn(PRCM_DOMAIN_SERIAL); 		// power on in MCU power domain  -> prcm.c
-	// PRCMDomainEnable(PRCM_DOMAIN_SERIAL);    // enable clk for domain    -> prcm.c
-	uint32_t debug = HWREG(PRCM_BASE + PRCM_O_SSICLKGR) & PRCM_SSICLKGR_CLK_EN_SSI0; // enable clock for SSI
-	HWREG(PRCM_BASE + PRCM_O_SSICLKGR) = 1;
-	// PRCM_SSICLKGR_CLK_EN_SSI0  = 1;			// geht nicht. ist define auf 0x000001
-}
-
-
-
-void powerDisableSPIdomain(void){
-	PRCMDomainDisable(PRCM_DOMAIN_SERIAL);
-
-}
-
-
 
 
 void initWUCEvent(){
@@ -140,12 +103,15 @@ void initRFInterrupts(void) { // hiess vorher: initInterrupts
 
 void initSensors(void){
 
-
-
-	// set IO (without enableing)				-> ..-sensor.c
+	// pressor 									-> ..-sensor.c
+	enable_bmp_280(1);							// set register for sensor
 	init_bmp_280();								// set up I2C for bmp, config and clear
+	// enable_bmp_280(0);
+
 	configure_tmp_007(0);
+
 	init_hdc_1000();
+
 	ext_flash_init(); 							//includes power down instruction
 
 	// Power down not needed Sensors
@@ -172,8 +138,6 @@ void initSensors(void){
 	g_humidity_acitve = false;
 
 }
-
-
 
 
 // Payload buffer = ADV DATA in ADV structure
@@ -217,6 +181,19 @@ void initBLEBuffer(void){
 	payload[23] = 0;
 
 }
+
+
+void initSPI(void){
+
+	// power on
+	powerEnableAuxForceOn(); 								// WUC domain
+	powerEnableXtalInterface(); 							// clk WUC
+	powerEnablePeriph();
+	powerEnableGPIOClockRunMode();
+	while((PRCMPowerDomainStatus(PRCM_DOMAIN_PERIPH) != PRCM_DOMAIN_POWER_ON)); /* Wait for domains to power on */
+
+}
+
 
 // **********************************************************************************************
 
@@ -379,7 +356,24 @@ void powerEnableXtalInterface(void) {
   HWREG(AUX_WUC_BASE + AUX_WUC_O_MODCLKEN0) |= AUX_WUC_OSCCTRL_CLOCK;
 }
 
+void powerEnableSPIdomain(void){
 
+	// power on GPIO (CS und andere Pins sind GPIO PIns)
+	powerEnablePeriph();
+	powerEnableGPIOClockRunMode();
+		while((PRCMPowerDomainStatus(PRCM_DOMAIN_PERIPH) != PRCM_DOMAIN_POWER_ON));
+
+	PRCMPowerDomainOn(PRCM_DOMAIN_SERIAL); 		// power on in MCU power domain  -> prcm.cS
+	uint32_t debug = HWREG(PRCM_BASE + PRCM_O_SSICLKGR) & PRCM_SSICLKGR_CLK_EN_SSI0; // enable clock for SSI
+	HWREG(PRCM_BASE + PRCM_O_SSICLKGR) = 1;
+}
+
+
+
+void powerDisableSPIdomain(void){
+	PRCMDomainDisable(PRCM_DOMAIN_SERIAL);
+
+}
 
 // **********************************************
 
