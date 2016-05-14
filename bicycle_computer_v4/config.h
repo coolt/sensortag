@@ -22,9 +22,8 @@ extern bool g_button_pressed;
 //#define MCU_MOSI					BOARD_IOID_SPI_MOSI   // IOID_19
 //#define MCU_MISO					BOARD_IOID_SPI_MISO   // IOID_18
 //#define MCU_SCLK					BOARD_IOID_SPI_CLK_FLASH // IOID_17
-//#define BOARD_IOID_FLASH_CS       IOID_14
-//#define BOARD_IOID_SPI_CLK_FLASH  IOID_17
 
+#define DELAY_M_SEC					12500		// 1 CPU_DELAY() = 4 * SYSCLK = 4 * 20 ns = 80 ns
 #define SPI_BUFFER_LENGTH 			100
 #define EM_CONFIG_BUFFER_LENGTH     128
 #define CONFIG_DATA_LENGTH 			64

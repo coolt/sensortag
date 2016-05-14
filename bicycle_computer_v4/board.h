@@ -61,7 +61,10 @@
 // SPI
 #define BOARD_IOID_SPI_MOSI       IOID_19
 #define BOARD_IOID_SPI_MISO       IOID_18
-#define BOARD_IOID_SPI_CLK_FLASH  IOID_17
+#define BOARD_IOID_SPI_CLK_FLASH  IOID_17  // checked. = TI Board Break out Pad DP8 SCLK
+#define BOARD_IOID_DEVPACK_CS     IOID_20 // = EM CS   (used as SPI to EM CS)  //  DP11 CSN
+
+
 #define BOARD_IOID_FLASH_CS       IOID_14
 #define BOARD_FLASH_CS            (1 << BOARD_IOID_FLASH_CS)
 
@@ -88,7 +91,7 @@
 
 // Dev Pack (as LCD, ..)
 #define BOARD_IOID_AUDIOFS_TDO        IOID_16
-#define BOARD_IOID_DEVPACK_CS         IOID_20
+
 #define BOARD_IOID_DEVPK_LCD_EXTCOMIN IOID_22
 #define BOARD_IOID_AUDIODO            IOID_22
 #define BOARD_IOID_DP2                IOID_23
