@@ -1,3 +1,4 @@
+#include "system.h"
 #include <driverLib/aux_wuc.h>
 #include <driverLib/cpu.h>
 #include <inc/hw_aon_wuc.h>
@@ -24,6 +25,7 @@
 
 // RFC
 #include "radio.h"
+#include "string.h" 					// memset()
 
 // Sensors
 #include "sensor-common.h"
@@ -36,6 +38,7 @@
 
 // spi
 #include "cc26xxware_2_22_00_16101/driverLib/prcm.h"
+#include "spi.h"
 
 // globale variable
 uint32_t g_timestamp1, g_timestamp2;
@@ -198,6 +201,44 @@ void initSPI(void){
 
 
 // **********************************************************************************************
+
+long getEnergyStateFromSPI(void){
+
+	g_current_energy_state = LOW_ENERGY;		// inital state
+	uint8_t energy_status_byte = 0;
+
+	uint8_t lts_bat_min_hi = 0;  		// bit 7
+	uint8_t lts_bat_min_lo = 0;			// bit 6
+	uint8_t sts_bat_max_hi = 0;
+	uint8_t sts_bat_max_lo = 0;
+	uint8_t sts_apl_min_hi = 0;
+	uint8_t sts_apl_min_lo = 0;
+	uint8_t sts_bat_min_hi = 0;
+	uint8_t sts_bat_min_lo = 0;			// bit 0
+
+
+	energy_status_byte = readStatusRegisterEM8500();
+
+	// extract bit for energy state
+	lts_bat_min_hi = (energy_status_byte & 0x80) >> 7; // V_LTS > bat_min hi dis
+	lts_bat_min_lo = (energy_status_byte & 0x40) >> 6; // V_LTS > bat_min hi con
+	sts_bat_max_hi = (energy_status_byte & 0x20) >> 5;
+	sts_bat_max_lo = (energy_status_byte & 0x10) >> 4;
+	sts_apl_min_hi = (energy_status_byte & 0x08) >> 3;
+	sts_apl_min_lo = (energy_status_byte & 0x04) >> 2;
+	sts_bat_min_hi = (energy_status_byte & 0x02) >> 1;
+	sts_bat_min_lo = (energy_status_byte & 0x01);
+
+	if (sts_apl_min_hi == 1 | sts_apl_min_lo ){
+		g_current_energy_state = MIDDLE_ENERGY;
+	}
+	else if (lts_bat_min_hi == 1 | lts_bat_min_lo == 1   ){
+
+		g_current_energy_state = HIGH_ENERGY;
+	}
+	return g_current_energy_state;
+}
+
 
 long getEnergyStateFromGPIO(void){
 

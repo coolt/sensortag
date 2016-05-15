@@ -13,6 +13,7 @@ void initSensors(void);
 
 // Interrupt-Function
 void start_RTC_speedMeasurement(uint32_t ms); 	// setRTC0  (can not be initalized)
+long getEnergyStateFromSPI(void);
 long getEnergyStateFromGPIO(void);
 uint32_t getTime(void);
 void calculateSpeed(uint32_t deltaTime);

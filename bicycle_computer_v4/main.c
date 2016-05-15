@@ -121,11 +121,10 @@ void getData(void){
 	powerEnableCache();
 
 
-
-
-	// read STS, LTS to know Energy state
+	// read Energy state from EM8500
 	// ----------------------------------
-	g_current_energy_state = getEnergyStateFromGPIO();
+	//g_current_energy_state = getEnergyStateFromGPIO();
+	g_current_energy_state = getEnergyStateFromSPI();
 	updateRTCWakeUpTime(g_current_energy_state);
 
 	// clear ble-data-buffer

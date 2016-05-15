@@ -27,8 +27,15 @@ uint8_t em8500_config_data[EM_CONFIG_BUFFER_LENGTH ];
 #define VALUE_T_HRV_PERIOD			0x44 // just for test
 
 
-uint8_t EM8500read(uint8_t address);
+// * Functions
+// ------------
+uint8_t EM8500read(uint8_t address);		// can read any address
+uint8_t readStatusRegisterEM8500(void);
+
 void configureEM8500(void);
+
+
+
 
 // imported values from read out em8500 config (PA)
 /*

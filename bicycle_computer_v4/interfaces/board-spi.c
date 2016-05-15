@@ -1,14 +1,5 @@
 /*
- * SPI wird über die SSI (synchron-serielle Schnittstelle) gesendet
- *
- * Der Master wird eingestellt
- * IOCPinTypeSsiMaster(uint32_t ui32Base, uint32_t ui32Rx,				-> ioc.h
-                                uint32_t ui32Tx, uint32_t ui32Fss,
-                                uint32_t ui32Clk);
- *
- * Die SPI Linien werden eingestellt									-> ioc.h
- * IOCPinTypeSpis(uint32_t ui32Rx, uint32_t ui32Tx, uint32_t ui32Fss,
-                           uint32_t ui32Clk);
+
  */
 /*---------------------------------------------------------------------------*/
 /**
@@ -23,23 +14,12 @@
 
 #include "ti-lib.h"
 #include <stdbool.h>
-#include <board.h>
 
-/* IOID = Number of IOC
- *  ---------------------
- * #define BOARD_IOID_SPI_MOSI       IOID_19
- * #define BOARD_IOID_SPI_MISO       IOID_18
- * #define BOARD_IOID_SPI_CLK_FLASH  IOID_17
- *
- * IOC-Port-Mapping
- * --------------------
- * #define IOC_PORT_AON_SCS          0x00000001  // AON SPI-S SCS Pin
- * #define IOC_PORT_AON_SCK          0x00000002  // AON SPI-S SCK Pin
- * #define IOC_PORT_AON_SDI          0x00000003  // AON SPI-S SDI Pin
- * #define IOC_PORT_AON_SDO          0x00000004  // AON SPI-S SDO Pin
- *
- *
- */
+#define BOARD_IOID_FLASH_CS       		IOID_14
+#define BOARD_IOID_SPI_MISO       	  	IOID_18
+#define BOARD_IOID_SPI_MOSI      	  	IOID_19
+#define BOARD_FLASH_CS            		(1 << BOARD_IOID_FLASH_CS)
+#define BOARD_IOID_SPI_CLK_FLASH  		IOID_17
 
 /*---------------------------------------------------------------------------*/
 bool accessible(void)
@@ -52,7 +32,7 @@ bool accessible(void)
 
   /* Then check the 'run mode' clock gate */
   if(!(HWREG(PRCM_BASE + PRCM_O_SSICLKGR) & PRCM_SSICLKGR_CLK_EN_SSI0)) {
-    return false;    // !! springt hier hinein
+    return false;
   }
 
   return true;
@@ -122,11 +102,11 @@ void board_spi_open(uint32_t bit_rate, uint32_t clk_pin)
   while(!ti_lib_prcm_load_get());
 
   /* SPI configuration */
-  ti_lib_ssi_int_disable(SSI0_BASE, SSI_RXOR | SSI_RXFF | SSI_RXTO | SSI_TXFF); 		// stop spi interrupts
+  ti_lib_ssi_int_disable(SSI0_BASE, SSI_RXOR | SSI_RXFF | SSI_RXTO | SSI_TXFF);
   ti_lib_ssi_int_clear(SSI0_BASE, SSI_RXOR | SSI_RXTO);
-  ti_lib_rom_ssi_config_set_exp_clk(SSI0_BASE, ti_lib_sys_ctrl_clock_get(),				// clk = systemclk
+  ti_lib_rom_ssi_config_set_exp_clk(SSI0_BASE, ti_lib_sys_ctrl_clock_get(),
                                     SSI_FRF_MOTO_MODE_0,
-                                    SSI_MODE_MASTER, bit_rate, 8);						// master
+                                    SSI_MODE_MASTER, bit_rate, 8);
   ti_lib_rom_ioc_pin_type_ssi_master(SSI0_BASE, BOARD_IOID_SPI_MISO,
                                      BOARD_IOID_SPI_MOSI, IOID_UNUSED, clk_pin);
   ti_lib_ssi_enable(SSI0_BASE);
