@@ -111,6 +111,8 @@ void initSensortag(void){
 
 void getData(void){
 
+	static uint16_t sequenceNumber = 0x1122;
+
 	// Wakeup from RTC according to energy-state
 	// ---------------------------------------------
 
@@ -118,10 +120,26 @@ void getData(void){
 	powerEnableAuxForceOn();
 	powerEnableCache();
 
+
+
+
 	// read STS, LTS to know Energy state
 	// ----------------------------------
 	g_current_energy_state = getEnergyStateFromGPIO();
 	updateRTCWakeUpTime(g_current_energy_state);
+
+	// clear ble-data-buffer
+	memset(payload, 0, ADVLEN); 											// Clear payload buffer (ADVLEN = 24)
+
+	//
+
+	// set header ble-data-buffer
+	payload[0] = ADVLEN - 1; 												// length = ADV-Length - 1 (1 Byte) = 23 Bytes
+	payload[1] = 0x03; 														// Type (1 Byte)  =>   0x03 = UUID -> immer 2 Bytes
+	payload[2] = 0xDE; 														// UUID (2 Bytes) =>   0xDE00 (UUID im Ines)
+	payload[3] = 0xBA;
+	payload[4] = (char) (sequenceNumber >> 8);															// Laufnummer für 2 Tage Laufzeit (2 Bytes)
+	payload[5] = (char) sequenceNumber;
 
 
 	// read sensors acording to the energy state
@@ -132,28 +150,12 @@ void getData(void){
 
 		static int g_ringbuffer = 0;
 
+
+
+
 		if(g_ringbuffer == 0){
 			enable_bmp_280(1);
 			g_pressure_set = true;
-
-
-			/*
-			 * our written function (works theoreticaly)
-			 * -----------------------------------------
-			uint8_t pressure_data[3];
-			bmp_280_pressure_read(&pressure_data);
-			int temp0 = pressure_data[0];
-			int temp1 = pressure_data[1];
-			int temp2 = pressure_data[2];
-
-			/* function from TI
-			 * ----------------
-			bool status = false;
-			status = read_data_bmp_280(&pressure_data);
-
-			/* => function call in setData()
-			 * --------------------------
-            */
 			g_ringbuffer ++;
 		}
 		else if (g_ringbuffer == 1){
@@ -176,6 +178,8 @@ void getData(void){
 		g_humidity_active = true;
 	}
 
+	// update sequence_number
+	sequenceNumber++;
 }
 
 
@@ -208,24 +212,18 @@ void setData(void){
 	else if(g_pressure_set){
 
 			uint32_t pressure = 0;  			// 3 Bytes
-			//uint32_t temperature = 0; 		// 3 Bytes
-
 
 			select_bmp_280();     				// activates I2C for bmp-sensor
 			enable_bmp_280(1);					// works
-
-			// function example TI
-			// sensor_common_read_reg(ADDR_PRESS_MSB, &buffer[0], 8);
-			//
 
 			do{
 				pressure = value_bmp_280(BMP_280_SENSOR_TYPE_PRESS);  //  read and converts in pascal (96'000 Pa)
 			}while(pressure == 0x80000000);
 
 			// extract 3 bytes (from 32 bit data vector
-			uint8_t highestByte = (pressure >> 16) & 0x000000FF; 	// 09
-			uint8_t middleByte  = (pressure >> 8) & 0x000000FF;  	// 66
-			uint8_t lowestByte  = pressure  & 0x000000FF;     		// xx
+			uint8_t highestByte = (pressure >> 16) & 0x000000FF;
+			uint8_t middleByte  = (pressure >> 8) & 0x000000FF;
+			uint8_t lowestByte  = pressure  & 0x000000FF;
 
 			// set current time to BLE-buffer
 			payload[10] =  (char) 0;

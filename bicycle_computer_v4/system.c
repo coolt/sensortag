@@ -160,17 +160,19 @@ void initBLEBuffer(void){
 	payload[8] = 0;															// miliseconds: higher byte
 	payload[9] = 0;															// miliseconds: lower byte
 
-	// sensors
-	payload[10] = 0;														// Sensor 1: Druck (4 bytes)
+	// sensor pressure
+	payload[10] = 0;														// Sensor 1: Druck (4 bytes: 3 bytes used)
 	payload[11] = 0;
 	payload[12] = 0;
 	payload[13] = 0;
 
+	// sensor temperature
 	payload[14] = 0;														// Sensor 2: Temperatur (4 bytes)
 	payload[15] = 0;
 	payload[16] = 0;
 	payload[17] = 0;
 
+	// sensor humidity
 	payload[18] = 0;														// Sensor 3: Feuchtigkeit (4 bytes)
 	payload[19] = 0;
 	payload[20] = 0;
