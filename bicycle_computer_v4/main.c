@@ -163,7 +163,7 @@ void getData(void){
 		}
 		else if(g_ringbuffer == 2){
 			// start_hdc_1000();
-			g_temp_active = true;
+			g_humidity_active = true;
 			g_ringbuffer = 0;
 		}
 	} // end MIDDLE ENERGY
@@ -173,7 +173,6 @@ void getData(void){
 		g_pressure_set = true;
 		enable_bmp_280(1);
 		g_temp_active = true;
-		// start_hdc_1000();
 		g_humidity_active = true;
 	}
 
@@ -205,44 +204,46 @@ void setData(void){
 		g_measurement_done = false;
 	}
 
+	// Athmonspheren-druck bei 450 müM = 96'600 Pa = ca 0.96 bar = 966 hPa
 	else if(g_pressure_set){
 
-			uint32_t pressure = 0;
-			//uint32_t temperature = 0;
+			uint32_t pressure = 0;  			// 3 Bytes
+			//uint32_t temperature = 0; 		// 3 Bytes
+
 
 			select_bmp_280();     				// activates I2C for bmp-sensor
-			enable_bmp_280(1);
+			enable_bmp_280(1);					// works
 
-			/* function example TI
-			 * sensor_common_read_reg(ADDR_PRESS_MSB, &buffer[0], 8);
-			 */
+			// function example TI
+			// sensor_common_read_reg(ADDR_PRESS_MSB, &buffer[0], 8);
+			//
 
 			do{
-				pressure = value_bmp_280(BMP_280_SENSOR_TYPE_PRESS);  //  read and converts in pascal (95'864 Pa = 0.9 bar ? )																	  // 101 325 Pa = 1 013,25 hPa ev.= 1 bar.
-				// temperature = value_bmp_280(BMP_280_SENSOR_TYPE_TEMP); // in centi degrees C  (3268 C)
+				pressure = value_bmp_280(BMP_280_SENSOR_TYPE_PRESS);  //  read and converts in pascal (96'000 Pa)
 			}while(pressure == 0x80000000);
 
-			// extract bytes
-			uint8_t higherSeconds    = (pressure >> 24) & 0x000000FF;
-			uint8_t lowerSeconds     = (pressure >> 16) & 0x000000FF;
-			uint8_t higherSubSeconds = (pressure >> 8) & 0x000000FF;
-			uint8_t lowerSubSeconds  = pressure  & 0x000000FF;
+			// extract 3 bytes (from 32 bit data vector
+			uint8_t highestByte = (pressure >> 16) & 0x000000FF; 	// 09
+			uint8_t middleByte  = (pressure >> 8) & 0x000000FF;  	// 66
+			uint8_t lowestByte  = pressure  & 0x000000FF;     		// xx
 
 			// set current time to BLE-buffer
-			payload[10] =  (char) higherSeconds;
-			payload[11] =  (char) lowerSeconds;
-			payload[12] =  (char) higherSubSeconds;
-			payload[13] =  (char) lowerSubSeconds;
+			payload[10] =  (char) 0;
+			payload[11] =  (char) highestByte;
+			payload[12] =  (char) middleByte;
+			payload[13] =  (char) lowestByte;
 
 			g_pressure_set = false;
-			enable_bmp_280(0);
-			board_i2c_shutdown();
+			// enable_bmp_280(0);
+			// board_i2c_shutdown();
+
 		}
 
 
 	else if(g_temp_active){
 
 		int temperature = 0;
+		/*
 		board_i2c_wakeup();
 		enable_tmp_007(1);					// activates I2C
 		// board_i2c_select(BOARD_I2C_INTERFACE_0, SENSOR_TEMPERATURE_I2C_ADDRESS); 		// activate I2C
@@ -254,7 +255,7 @@ void setData(void){
 
 
 		 //sprintf(char_temp, "%3d",temperature/100);
-
+		 */
 		 temperature = 0x33333333;
 
 		// extract bytes
@@ -270,8 +271,9 @@ void setData(void){
 		payload[17] =  (char) lowerSubSeconds;
 
 		g_temp_active = false;
-		enable_tmp_007(0);
-		board_i2c_shutdown();
+		//enable_tmp_007(0);
+		//board_i2c_shutdown();
+
 		}
 
 	else if(g_humidity_active){
@@ -281,15 +283,16 @@ void setData(void){
 			board_i2c_wakeup();
 			board_i2c_select(BOARD_I2C_INTERFACE_0, SENSOR_HUMIDITY_I2C_ADDRESS); 		// activate I2C
 
-			configure_hdc_1000();
-		    start_hdc_1000();
+			configure_hdc_1000();  // works
+		    start_hdc_1000();  // works
 
+/*
 		    // wait for reading value
 		    while(!read_data_hdc_1000());
 
 		    humidity = value_hdc_1000(HDC_1000_SENSOR_TYPE_HUMIDITY);
 		    // sprintf(char_hum, "%3d",humidity/10);
-
+*/
 			humidity = 0x44444444;
 
 			// extract bytes
@@ -305,7 +308,7 @@ void setData(void){
 			payload[21] =  (char) lowerSubSeconds;
 
 			g_pressure_set = false;
-			board_i2c_shutdown();
+			//board_i2c_shutdown();
 		}
 
 

@@ -243,6 +243,7 @@ int value_bmp_280(int type)
   int rv;
   int32_t temp = 0;
   uint32_t pres = 0;
+  uint32_t calib_pressure = 740;			//95'860 hPa = raw data,  Correct = 96'600 hPa
 
   /*
   if(enabled != SENSOR_STATUS_READY) {   // sensor is not ready
@@ -272,7 +273,7 @@ int value_bmp_280(int type)
     if(type == BMP_280_SENSOR_TYPE_TEMP) {
       rv = (int)temp;
     } else if(type == BMP_280_SENSOR_TYPE_PRESS) {
-      rv = (int)pres;
+      rv = (int)pres; //+ calib_pressure;				// calibrated sensor
     }
   }
   return rv;

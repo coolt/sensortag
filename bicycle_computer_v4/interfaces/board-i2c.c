@@ -92,7 +92,8 @@ board_i2c_shutdown()
    * SDA and SCL: external PU resistor
    * SDA HP and SCL HP: MPU PWR low
    */
-  ti_lib_ioc_pin_type_gpio_input(BOARD_IOID_SDA_HP);
+  /*
+  ti_lib_ioc_pin_type_gpio_input(BOARD_IOID_SDA_HP);  // crasg
   ti_lib_ioc_io_port_pull_set(BOARD_IOID_SDA_HP, IOC_IOPULL_DOWN);
   ti_lib_ioc_pin_type_gpio_input(BOARD_IOID_SCL_HP);
   ti_lib_ioc_io_port_pull_set(BOARD_IOID_SCL_HP, IOC_IOPULL_DOWN);
@@ -101,6 +102,7 @@ board_i2c_shutdown()
   ti_lib_ioc_io_port_pull_set(BOARD_IOID_SDA, IOC_IOPULL_UP);
   ti_lib_ioc_pin_type_gpio_input(BOARD_IOID_SCL);
   ti_lib_ioc_io_port_pull_set(BOARD_IOID_SCL, IOC_IOPULL_UP);
+  */
 }
 /*---------------------------------------------------------------------------*/
 bool
