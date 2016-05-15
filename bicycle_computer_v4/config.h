@@ -70,5 +70,6 @@ extern volatile bool rfAdvertisingDone;				// communication flag
 // -------
 extern bool g_pressure_set, g_humidity_active, g_temp_active;
 extern uint16_t g_pressure;
+extern uint16_t g_temp_calibration;
 
 

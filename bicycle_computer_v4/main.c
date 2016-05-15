@@ -111,7 +111,7 @@ void initSensortag(void){
 
 void getData(void){
 
-	static uint16_t sequenceNumber = 0x1122;
+	static uint16_t sequenceNumber = 0x0;
 
 	// Wakeup from RTC according to energy-state
 	// ---------------------------------------------
@@ -149,9 +149,6 @@ void getData(void){
 	if(g_current_energy_state == MIDDLE_ENERGY ){
 
 		static int g_ringbuffer = 0;
-
-
-
 
 		if(g_ringbuffer == 0){
 			enable_bmp_280(1);
@@ -211,16 +208,17 @@ void setData(void){
 	// Athmonspheren-druck bei 450 müM = 96'600 Pa = ca 0.96 bar = 966 hPa
 	else if(g_pressure_set){
 
-			uint32_t pressure = 0;  			// 3 Bytes
-
+			uint32_t pressure = 0;  			// only 3 Bytes used
+			uint32_t temp = 0;
 			select_bmp_280();     				// activates I2C for bmp-sensor
 			enable_bmp_280(1);					// works
 
 			do{
 				pressure = value_bmp_280(BMP_280_SENSOR_TYPE_PRESS);  //  read and converts in pascal (96'000 Pa)
+				temp = value_bmp_280(BMP_280_SENSOR_TYPE_TEMP);
 			}while(pressure == 0x80000000);
 
-			// extract 3 bytes (from 32 bit data vector
+			// extract 3 bytes (from 32 bit data vector)
 			uint8_t highestByte = (pressure >> 16) & 0x000000FF;
 			uint8_t middleByte  = (pressure >> 8) & 0x000000FF;
 			uint8_t lowestByte  = pressure  & 0x000000FF;
@@ -237,36 +235,28 @@ void setData(void){
 
 		}
 
-
 	else if(g_temp_active){
 
-		int temperature = 0;
-		/*
+		uint16_t temperature = 0;
+
 		board_i2c_wakeup();
 		enable_tmp_007(1);					// activates I2C
-		// board_i2c_select(BOARD_I2C_INTERFACE_0, SENSOR_TEMPERATURE_I2C_ADDRESS); 		// activate I2C
+		board_i2c_select(BOARD_I2C_INTERFACE_0, SENSOR_TEMPERATURE_I2C_ADDRESS); 		// activate I2C
 
 		 do{
-		    	temperature = value_tmp_007(TMP_007_SENSOR_TYPE_AMBIENT);
-		    }while(temperature==0x80000000);
-		// int temp = value_tmp_007(TMP_007_SENSOR_TYPE_ALL);				// -> temp-007-sensor.c
+		    	temperature = value_tmp_007(TMP_007_SENSOR_TYPE_AMBIENT);      // in mC°
+		    }while(temperature == 0x80000000 |temperature == 0 );
 
-
-		 //sprintf(char_temp, "%3d",temperature/100);
-		 */
-		 temperature = 0x33333333;
 
 		// extract bytes
-		uint8_t higherSeconds    = (temperature >> 24) & 0x000000FF;
-		uint8_t lowerSeconds     = (temperature >> 16) & 0x000000FF;
-		uint8_t higherSubSeconds = (temperature >> 8) & 0x000000FF;
-		uint8_t lowerSubSeconds  = temperature  & 0x000000FF;
+		uint8_t higherByte = (temperature >> 8) & 0x000000FF;
+		uint8_t lowerByte  = temperature  & 0x000000FF;
 
-		// set current time to BLE-buffer
-		payload[14] =  (char) higherSeconds;
-		payload[15] =  (char) lowerSeconds;
-		payload[16] =  (char) higherSubSeconds;
-		payload[17] =  (char) lowerSubSeconds;
+		// set current temp in mC° to BLE-buffer
+		payload[14] =  0;
+		payload[15] =  0;
+		payload[16] =  higherByte;
+		payload[17] =  lowerByte;
 
 		g_temp_active = false;
 		//enable_tmp_007(0);

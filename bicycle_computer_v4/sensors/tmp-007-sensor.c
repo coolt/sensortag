@@ -80,6 +80,15 @@ static uint16_t val;
 #define SENSOR_STARTUP_DELAY 36
 
 /*---------------------------------------------------------------------------*/
+/* Configuation temp-Sensors */
+uint16_t g_temp_calibration = 12320; 	  // in mC°
+
+// 29.230 + 28.410 = 57.640				 // in C°
+// 2 * 16.500 = 33.0000
+// Diff = 57.640 - 33.000 = 24.640		 // for 2 sensors
+
+
+/*---------------------------------------------------------------------------*/
 /* Latched values */
 static int obj_temp_latched;
 static int amb_temp_latched;
@@ -189,7 +198,7 @@ int value_tmp_007(int type)
 
   rv = CC26XX_SENSOR_READING_ERROR;
 
-  if(type == TMP_007_SENSOR_TYPE_ALL) {
+  if(type == TMP_007_SENSOR_TYPE_ALL | TMP_007_SENSOR_TYPE_AMBIENT) {
     rv = read_data_tmp_007(&raw_temp, &raw_obj_temp);      // read()
 
     if(rv == 0) {
@@ -209,6 +218,8 @@ int value_tmp_007(int type)
     rv = amb_temp_latched;
   }
 
+  // add calibration to current sensor value
+  rv = amb_temp_latched - g_temp_calibration;
   return rv;
 }
 /*---------------------------------------------------------------------------*/
