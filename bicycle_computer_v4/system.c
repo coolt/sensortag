@@ -209,11 +209,11 @@ long getEnergyStateFromSPI(void){
 
 	uint8_t lts_bat_min_hi = 0;  		// bit 7
 	uint8_t lts_bat_min_lo = 0;			// bit 6
-	uint8_t sts_bat_max_hi = 0;
-	uint8_t sts_bat_max_lo = 0;
-	uint8_t sts_apl_min_hi = 0;
-	uint8_t sts_apl_min_lo = 0;
-	uint8_t sts_bat_min_hi = 0;
+	uint8_t sts_bat_max_hi = 0;			// bit 5
+	uint8_t sts_bat_max_lo = 0;			// bit 4
+	uint8_t sts_apl_min_hi = 0;			// bit 3
+	uint8_t sts_apl_min_lo = 0;			// bit 2
+	uint8_t sts_bat_min_hi = 0;			// bit 1
 	uint8_t sts_bat_min_lo = 0;			// bit 0
 
 

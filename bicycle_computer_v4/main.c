@@ -207,30 +207,30 @@ void setData(void){
 	// Athmonspheren-druck bei 450 müM = 96'600 Pa = ca 0.96 bar = 966 hPa
 	else if(g_pressure_set){
 
-			uint32_t pressure = 0;  			// only 3 Bytes used
-			uint32_t temp = 0;
-			select_bmp_280();     				// activates I2C for bmp-sensor
-			enable_bmp_280(1);					// works
+		uint32_t pressure = 0;  			// only 3 Bytes used
+		uint32_t temp = 0;
+		select_bmp_280();     				// activates I2C for bmp-sensor
+		enable_bmp_280(1);					// works
 
-			do{
-				pressure = value_bmp_280(BMP_280_SENSOR_TYPE_PRESS);  //  read and converts in pascal (96'000 Pa)
-				temp = value_bmp_280(BMP_280_SENSOR_TYPE_TEMP);
-			}while(pressure == 0x80000000);
+		do{
+			pressure = value_bmp_280(BMP_280_SENSOR_TYPE_PRESS);  //  read and converts in pascal (96'000 Pa)
+			//temp = value_bmp_280(BMP_280_SENSOR_TYPE_TEMP);
+		}while(pressure == 0x80000000);
 
-			// extract 3 bytes (from 32 bit data vector)
-			uint8_t highestByte = (pressure >> 16) & 0x000000FF;
-			uint8_t middleByte  = (pressure >> 8) & 0x000000FF;
-			uint8_t lowestByte  = pressure  & 0x000000FF;
+		// extract 3 bytes (from 32 bit data vector)
+		uint8_t highestByte = (pressure >> 16) & 0x000000FF;
+		uint8_t middleByte  = (pressure >> 8) & 0x000000FF;
+		uint8_t lowestByte  = pressure  & 0x000000FF;
 
-			// set current time to BLE-buffer
-			payload[10] =  (char) 0;
-			payload[11] =  (char) highestByte;
-			payload[12] =  (char) middleByte;
-			payload[13] =  (char) lowestByte;
+		// set current time to BLE-buffer
+		payload[10] =  (char) 0;
+		payload[11] =  (char) highestByte;
+		payload[12] =  (char) middleByte;
+		payload[13] =  (char) lowestByte;
 
-			g_pressure_set = false;
-			// enable_bmp_280(0);
-			// board_i2c_shutdown();
+		g_pressure_set = false;
+		// enable_bmp_280(0);
+		// board_i2c_shutdown();
 
 		}
 
@@ -311,8 +311,6 @@ void setData(void){
 
 	// no new data to send: clear buffer
 	else {
-		payload[4]  =  (char) 0x0;
-		payload[5]  =  (char) 0x0;
 		payload[6]  =  (char) 0x0;
 		payload[7]  =  (char) 0x0;
 		payload[8]  =  (char) 0x0;

@@ -157,7 +157,7 @@ bool read_data_bmp_280(uint8_t *data)
 
   select_bmp_280();
 
-  success = sensor_common_read_reg(ADDR_PRESS_MSB, data, MEAS_DATA_SIZE);
+  success = sensor_common_read_reg(ADDR_PRESS_MSB, data, MEAS_DATA_SIZE); // hängt sich auf
   if(!success) {
     sensor_common_set_error_data(data, MEAS_DATA_SIZE);
   }

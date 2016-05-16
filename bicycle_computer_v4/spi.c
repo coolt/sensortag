@@ -121,25 +121,23 @@ uint8_t readStatusRegisterEM8500(void){
 		board_spi_open(bit_rate, clk_pin);
 		ti_lib_ioc_pin_type_gpio_output(BOARD_IOID_DEVPACK_CS);//config Pin CSN as output
 
-		while(1){
+		// set read comand
+		command = 0x80 | addr_status_reg;				// read command | start-adress to read
 
-			// set read comand
-			command = 0x80 | addr_status_reg;				// read command | start-adress to read
+		// chip select
+		ti_lib_gpio_pin_write(BOARD_DEVPACK_CS, 1);	 	// enable chip select
+		CPUdelay(1 * DELAY_M_SEC);
 
-			// chip select
-			ti_lib_gpio_pin_write(BOARD_DEVPACK_CS, 1);	 	// enable chip select
-			CPUdelay(1 * DELAY_M_SEC);
+		// write read command
+		board_spi_write(&command, 1);
+		CPUdelay(1 * DELAY_M_SEC);
 
-			// write read command
-			board_spi_write(&command, 1);
-			CPUdelay(1 * DELAY_M_SEC);
+		// read answer from register
+		board_spi_read(&status_register, 1);					// Read byte form the status register
+		CPUdelay(8 * DELAY_M_SEC); 						//
+		ti_lib_gpio_pin_write(BOARD_DEVPACK_CS, 0);		// deselect CS
+		CPUdelay(10 * DELAY_M_SEC);
 
-			// read answer from register
-			board_spi_read(&status_register, 1);					// Read byte form the status register
-			CPUdelay(8 * DELAY_M_SEC); 						//
-			ti_lib_gpio_pin_write(BOARD_DEVPACK_CS, 0);		// deselect CS
-			CPUdelay(10 * DELAY_M_SEC);
-		}
 	}
 	board_spi_close();					// new here: before direct after while(1) and never reached
 	// powerDisableSPIdomain();			// check: if to comment out
