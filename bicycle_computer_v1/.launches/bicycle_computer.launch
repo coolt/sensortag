@@ -17,7 +17,7 @@
 <stringAttribute key="com.ti.ccstudio.debug.debugModel.ATTR_PROGRAM.Texas Instruments XDS110 USB Debug Probe/Cortex_M3_0" value="${build_artifact:bicycle_computer}"/>
 <stringAttribute key="com.ti.ccstudio.debug.debugModel.ATTR_PROJECT.Texas Instruments XDS110 USB Debug Probe/Cortex_M3_0" value="bicycle_computer"/>
 <stringAttribute key="com.ti.ccstudio.debug.debugModel.ATTR_TARGET_CONFIG" value="${target_config_active_default:bicycle_computer}"/>
-<stringAttribute key="com.ti.ccstudio.debug.debugModel.MRU_PROGRAM.Texas Instruments XDS110 USB Debug Probe/Cortex_M3_0" value="C:/Users\katrin\Documents\Dokumente\ZHAW\5Jahr\ba_bicycle_comp\bicycle_computer_v1_geht\Debug\bicycle_computer.out"/>
+<stringAttribute key="com.ti.ccstudio.debug.debugModel.MRU_PROGRAM.Texas Instruments XDS110 USB Debug Probe/Cortex_M3_0" value="C:/Users\katrin\Documents\GitHub\sensortag\bicycle_computer_v1\Debug\bicycle_computer.out"/>
 <listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_PATHS">
 <listEntry value="/bicycle_computer"/>
 </listAttribute>

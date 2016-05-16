@@ -1,5 +1,5 @@
 /**
- V4:
+ V5:
  * Energy mode und wake up time manully set. (see getdata() )
  *
  */
@@ -93,9 +93,7 @@ void initSensortag(void){
 
 
 		// Setup for next state
-		IntEnable(INT_EDGE_DETECT); // Dario
-//		IntDisable(INT_EDGE_DETECT);							// Enable specific interrupt. Int_EDGE_DETECT = Nr. 16  (=> all GPIO-interrupts   ?? )
-//		AONRTCEnable();											// PA: Enable RTC
+		AONRTCEnable();
 
 		// power off and set Refresh on
 		powerDisablePeriph(); //Disable clock for GPIO in CPU run mode
@@ -122,17 +120,13 @@ void getData(void){
 	powerEnableAuxForceOn();
 	powerEnableCache();
 
-
 	// read Energy state from EM8500
 	// ----------------------------------
-	//g_current_energy_state = getEnergyStateFromGPIO();
 	g_current_energy_state = getEnergyStateFromSPI();
 	updateRTCWakeUpTime(g_current_energy_state);
 
 	// clear ble-data-buffer
 	memset(payload, 0, ADVLEN); 											// Clear payload buffer (ADVLEN = 24)
-
-	//
 
 	// set header ble-data-buffer
 	payload[0] = ADVLEN - 1; 												// length = ADV-Length - 1 (1 Byte) = 23 Bytes
@@ -178,18 +172,27 @@ void getData(void){
 
 	// update sequence_number
 	sequenceNumber++;
+
+	// for reading reed switch
+	IntEnable(INT_EDGE_DETECT);
+
 }
 
 
 void setData(void){
 
-	// Wait for interrupts for data
-
-	// after 2 RTC_CH2 interrupts, time measuring is done
+	// Wait for 2 Reed Interrupts for speed-data
+/*	while(!g_measurement_done){
+		IntEnable(INT_EDGE_DETECT);
+		//AONRTCEnable();
+		//sleepReed();
+	}
+*/
 	if(g_measurement_done){
 
 		uint32_t timeFromRegister = 0;
 		timeFromRegister = getTime();
+		//timeFromRegister = 0x22222222;
 
 		// extract bytes
 		uint8_t higherSeconds    = (timeFromRegister >> 24) & 0x000000FF;
@@ -206,8 +209,10 @@ void setData(void){
 		g_measurement_done = false;
 	}
 
+
+
 	// Athmonspheren-druck bei 450 müM = 96'600 Pa = ca 0.96 bar = 966 hPa
-	else if(g_pressure_set){
+	if(g_pressure_set){
 
 		uint32_t pressure = 0;  			// only 3 Bytes used
 		//uint32_t temp = 0;
@@ -389,6 +394,27 @@ void sleep(){
 	powerDisableRFC();
 	OSCHfSourceSwitch(); 						// lower clk
 	powerDisableAuxForceOn(); 					// Higher oscillator interface no more needed
+	powerEnableMcuPdReq(); 						// Goto Standby. MCU will now request to be powered down on DeepSleep
+	powerDisableCache();
+	powerDisableCacheRetention();
+
+	//Calculate next recharge (Refreshtime): must be BEFORE POWER DOWN
+	SysCtrlSetRechargeBeforePowerDown(XOSC_IN_HIGH_POWER_MODE);
+	SysCtrlAonSync(); 							// Synchronize transactions to AON domain to ensure AUX has turned off
+
+	// Enter Standby
+	powerDisableCPU();
+	PRCMDeepSleep();
+	SysCtrlAonUpdate();
+	SysCtrlAdjustRechargeAfterPowerDown();   	// AFTER POWER DOWN: Set refresh cycle
+	SysCtrlAonSync();
+}
+
+void sleepReed(){
+
+	// Standby procedure
+	OSCHfSourceSwitch(); 						// lower clk
+	powerDisableAuxForceOn(); 				// Higher oscillator interface no more needed
 	powerEnableMcuPdReq(); 						// Goto Standby. MCU will now request to be powered down on DeepSleep
 	powerDisableCache();
 	powerDisableCacheRetention();

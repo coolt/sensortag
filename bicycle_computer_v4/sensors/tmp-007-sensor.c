@@ -219,7 +219,7 @@ int value_tmp_007(int type)
   }
 
   // add calibration to current sensor value
-  rv = amb_temp_latched - g_temp_calibration;
+  rv = amb_temp_latched;
   return rv;
 }
 /*---------------------------------------------------------------------------*/

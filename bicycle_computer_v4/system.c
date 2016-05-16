@@ -69,8 +69,6 @@ void initRTCInterrupts(void) {
 
 	// Ch 2: Speed Meausrement  -> init by calling
 
-	// Enable RTC
-	AONRTCEnable();
 }
 
 
@@ -204,7 +202,7 @@ void initSPI(void){
 
 long getEnergyStateFromSPI(void){
 
-	g_current_energy_state = LOW_ENERGY;		// inital state
+	g_current_energy_state = MIDDLE_ENERGY;		// inital state
 	uint8_t energy_status_byte = 0;
 
 	uint8_t lts_bat_min_hi = 0;  		// bit 7

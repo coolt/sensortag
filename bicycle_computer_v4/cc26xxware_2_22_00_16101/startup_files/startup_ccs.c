@@ -279,7 +279,7 @@ void AONRTCIntHandler(void) {
 	if(AONRTCEventGet(AON_RTC_CH2)){
 		AONRTCEventClear(AON_RTC_CH2);		// Clear RTC 2 event flag
 	}
-	int debug = 2;
+	//int debug = 2;
 }
 
 
@@ -313,11 +313,11 @@ void GPIOIntHandler(void){
 		if(g_timestamp1 == 0){
 			// Get the first Interrupt Time
 			g_timestamp1 = AONRTCCurrentCompareValueGet(); // AONRTCCurrentSubSecValueGet();
-			int debug_1 = 5;
+			//int debug_1 = 5;
 		} else {
 			// Get the second Interrupt Time
 			g_timestamp2 = AONRTCCurrentCompareValueGet(); // AONRTCCurrentSubSecValueGet();
-			int debug = 2;
+			//int debug = 2;
 			g_measurement_done = true;
 			AONRTCReset();
 		}
