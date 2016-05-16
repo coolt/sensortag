@@ -49,6 +49,9 @@ void configureEM8500(){
 	uint32_t clk_pin = IOID_17; 				// MCU SCLK == Borad IOID SPI_FLASH_CLK  = DP8 SCLK
 	uint8_t buffer[100];
 	uint8_t bufferRead[100];
+	uint8_t address = 0x45;
+	uint8_t value = 0x4d;
+	uint8_t read_write = 1;						// 0 = write, 1 = read, 2 = read & write
 
 	// set values to buffer
 	int i = 0;
@@ -66,40 +69,43 @@ void configureEM8500(){
 
 		while(1){
 
-			// Set Data in writing-Buffer
-			buffer[0]=0x1B;					// Adress of protection key
-			buffer[1]=0xA5;					// value protection key (for eeprom-adresses)
-			buffer[2]=0x41;					// set address EPROM
-			buffer[3]=0x05;					// set value EPROM
+			if((read_write == 0)|(read_write == 2)){
 
-			// write
-			ti_lib_gpio_pin_write(BOARD_DEVPACK_CS, 1);		// activate CS (from low to high) select
-			CPUdelay(1 * DELAY_M_SEC);
-			board_spi_write(buffer, 4);						// write first 2 data bytes from buffer
-															// little wait befor end of writing by CS set to 0.
-			CPUdelay(8 * DELAY_M_SEC); 						// CS is gone to fast to GND !
-			ti_lib_gpio_pin_write(BOARD_DEVPACK_CS, 0);		// deactivates CS (go to GND)
+				// Set Data in writing-Buffer
+				buffer[0]= 0x1B;					// Adress of protection key
+				buffer[1]= 0xA5;					// value protection key (for eeprom-adresses)
+				buffer[2]= address;					// set address EPROM
+				buffer[3]= value;					// set value EPROM
 
-			// wait before read
-			CPUdelay(8 * DELAY_M_SEC);
+				// write
+				ti_lib_gpio_pin_write(BOARD_DEVPACK_CS, 1);		// activate CS (from low to high) select
+				CPUdelay(1 * DELAY_M_SEC);
+				board_spi_write(buffer, 4);						// write first 2 data bytes from buffer
+																// little wait befor end of writing by CS set to 0.
+				CPUdelay(8 * DELAY_M_SEC); 						// CS is gone to fast to GND !
+				ti_lib_gpio_pin_write(BOARD_DEVPACK_CS, 0);		// deactivates CS (go to GND)
 
-			uint8_t address = 0x41;
+				// wait before read
+				CPUdelay(8 * DELAY_M_SEC);
+			}
 
-			// set read comands to buffer
-			buffer[0]=0x80 | address;							// command for read (read command | start-adress to read)
+			if(read_write > 0){
 
-			// read
-			ti_lib_gpio_pin_write(BOARD_DEVPACK_CS, 1);	 	// enable Chip select
-			CPUdelay(1 * DELAY_M_SEC);
-			board_spi_write(buffer, 1);						// set to read commands (start read, adress to read)
-			CPUdelay(1 * DELAY_M_SEC); 						//
+				// set read comands to buffer
+				buffer[0]= 0x80 | address;						// command for read (read command | start-adress to read)
 
-			board_spi_read(bufferRead, 1);					// Read 2 byte form the set address
-			CPUdelay(8 * DELAY_M_SEC); 						//
-			ti_lib_gpio_pin_write(BOARD_DEVPACK_CS, 0);		// deselect CS
-			CPUdelay(10 * DELAY_M_SEC);
-			//uint8_t debug_1 = bufferRead[0];
-			//uint8_t debug_2 = bufferRead[1];
+				// read
+				ti_lib_gpio_pin_write(BOARD_DEVPACK_CS, 1);	 	// enable Chip select
+				CPUdelay(1 * DELAY_M_SEC);
+				board_spi_write(buffer, 1);						// set to read commands (start read, adress to read)
+				CPUdelay(1 * DELAY_M_SEC); 						//
+
+				board_spi_read(bufferRead, 1);					// Read 2 byte form the set address
+				CPUdelay(8 * DELAY_M_SEC); 						//
+				ti_lib_gpio_pin_write(BOARD_DEVPACK_CS, 0);		// deselect CS
+				CPUdelay(10 * DELAY_M_SEC);
+
+			}
 		}
 	}
 	board_spi_close();    						// new here. before was after while (1) and never reached

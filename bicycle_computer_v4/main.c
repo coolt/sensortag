@@ -1,5 +1,5 @@
 /**
- V3:
+ V4:
  * Energy mode und wake up time manully set. (see getdata() )
  *
  */
@@ -46,6 +46,8 @@
 
 #include "string.h"
 
+// SPI
+#include "spi.h"
 
 // globale variables: declared in config.h, set in handler (startup_ccs) and radio.c
 bool g_measurement_done;				// flag, set when 2 timestamps from reed-switch are stored
@@ -208,7 +210,7 @@ void setData(void){
 	else if(g_pressure_set){
 
 		uint32_t pressure = 0;  			// only 3 Bytes used
-		uint32_t temp = 0;
+		//uint32_t temp = 0;
 		select_bmp_280();     				// activates I2C for bmp-sensor
 		enable_bmp_280(1);					// works
 
@@ -420,8 +422,9 @@ int main(void) {
 		/*
 		AONWUCJtagPowerOff(); 									//Disable JTAG to allow for Standby
 		configureEM8500();
- */
+		*/
 		// wait for interrupts
+
 		getData();
 		setData();
 		sendData();
