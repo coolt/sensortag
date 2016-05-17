@@ -122,8 +122,8 @@ void getData(void){
 
 	// read Energy state from EM8500
 	// ----------------------------------
-	g_current_energy_state = getEnergyStateFromSPI();
-	updateRTCWakeUpTime(g_current_energy_state);
+	//g_current_energy_state = getEnergyStateFromSPI();
+	//updateRTCWakeUpTime(g_current_energy_state);
 
 	// clear ble-data-buffer
 	memset(payload, 0, ADVLEN); 											// Clear payload buffer (ADVLEN = 24)
@@ -141,7 +141,7 @@ void getData(void){
 	// LOW:  no sensorts
 	// MIDDLE: only one sensor, but each time a new one (ringbuffer-system)
 	// HIGH: read all sensors
-	if(g_current_energy_state == MIDDLE_ENERGY ){
+/*	if(g_current_energy_state == MIDDLE_ENERGY ){
 
 		static int g_ringbuffer = 0;
 
@@ -172,7 +172,7 @@ void getData(void){
 
 	// update sequence_number
 	sequenceNumber++;
-
+*/
 	// for reading reed switch
 	IntEnable(INT_EDGE_DETECT);
 
@@ -188,7 +188,7 @@ void setData(void){
 		//sleepReed();
 	}
 */
-	if(g_measurement_done){
+/*	if(g_measurement_done){
 
 		uint32_t timeFromRegister = 0;
 		timeFromRegister = getTime();
@@ -287,7 +287,7 @@ void setData(void){
 		    humidity = value_hdc_1000(HDC_1000_SENSOR_TYPE_HUMIDITY);
 		    // sprintf(char_hum, "%3d",humidity/10);
 */
-			humidity = 0x44444444;
+/*			humidity = 0x44444444;
 
 			// extract bytes
 			uint8_t higherSeconds    = (humidity >> 24) & 0x000000FF;
@@ -305,9 +305,9 @@ void setData(void){
 			//board_i2c_shutdown();
 		}
 
-
+*/
 	// to del: only for debugging (set values in check-value buffer)
-	else if(g_button_pressed){
+	if(g_button_pressed){
 
 		// check bytes
 		payload[22] =  0xEE;
@@ -388,6 +388,8 @@ void sendData(){
 
 
 void sleep(){
+
+
 
 	// Standby procedure
 	powerDisableXtal();

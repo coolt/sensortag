@@ -10,7 +10,7 @@
 #include <driverLib/sys_ctrl.h>
 
 long g_current_wake_up_time;
-long g_current_energy_state;
+long g_current_energy_state = WAKE_INTERVAL_LOW_ENERGY ;  // initial value
 
 
 // set Wake up time according to energy state
