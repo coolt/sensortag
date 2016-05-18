@@ -30,3 +30,10 @@ bicycle_computer_v2/*.xdchelp
 workspace_0401/.metadata/.plugins/org.eclipse.cdt.ui/bicycle_computer.build.log
 workspace_0401/.metadata/.plugins/org.eclipse.core.runtime/.settings/org.eclipse.cdt.managedbuilder.core.prefs
 workspace_0401/.metadata/.log
+SO_WS_BLE_ADV_URI/.metadata/.lock
+*.xml
+SO_WS_BLE_ADV_URI/.metadata/.plugins/org.eclipse.cdt.core/simplebroadcast_improved_recharge.1459495506576.pdom
+*.index
+SO_WS_BLE_ADV_URI/.metadata/.plugins/org.eclipse.core.resources/.root/.indexes/properties.version
+*.tree
+SO_WS_BLE_ADV_URI/.metadata/.plugins/org.eclipse.e4.workbench/workbench.xmi
