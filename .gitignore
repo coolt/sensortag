@@ -1,18 +1,5 @@
-﻿
-# verzeichnisse ganz ausschliessen dir/
-bicycle_computer_v1_geht/
-workspace_0401/**
+﻿# Projekt liegt in Workspace Desktop/v4
 
-# Trifft alles unterhalb dieses Verzeichnisses  dir/**
-bicycle_computer_v2/.launches/**
-bicycle_computer_v2/Debug/**
-
-
-# Dateien an genau dieser Stelle /*.c
-bicycle_computer_v2/*.xdchelp
-
-
-# Trifft Datei/Verzeichnis überall **/foo
 **/.xdchelp
 **/Debug/**
 **/.config 
@@ -20,6 +7,26 @@ bicycle_computer_v2/*.xdchelp
 **/.log
 **/.xml
 **/.log
+
+
+
+# verzeichnisse ganz ausschliessen dir/
+bicycle_computer_v1_geht/**
+workspace_0401/**
+bicycle_computer_v2/.launches/**
+bicycle_computer_v2/Debug/**
+
+biccle_computer_neu/**
+
+bicycle_computer_v4/.metadata/**
+SO_WS_BLE_ADV_URI/.metadata/**
+bicycle_computer_v5/.metadata/**
+
+# Dateien an genau dieser Stelle /*.c
+bicycle_computer_v2/*.xdchelp
+
+
+
 
 
 
