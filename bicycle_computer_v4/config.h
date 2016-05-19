@@ -47,7 +47,7 @@ extern long g_current_wake_up_time/* = WAKE_INTERVAL_HIGH_ENERGY*/;		// = max. =
 #define MIDDLE_ENERGY 				0x02
 #define HIGH_ENERGY 				0x04
 
-extern long g_current_energy_state;
+extern long g_current_energy_state ;
 
 //* Speed measurement
 // -----------------
